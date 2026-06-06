@@ -32,11 +32,17 @@ class NVDCVEFetcher(BaseFetcher):
         """
         params = {"resultsPerPage": min(limit, 2000)}
 
-        # Normalize input dates to timezone-aware (UTC) if they are naive
-        if pub_start_date is not None and pub_start_date.tzinfo is None:
-            pub_start_date = pub_start_date.replace(tzinfo=timezone.utc)
-        if pub_end_date is not None and pub_end_date.tzinfo is None:
-            pub_end_date = pub_end_date.replace(tzinfo=timezone.utc)
+        # Normalize input dates to timezone-aware (UTC)
+        if pub_start_date is not None:
+            if pub_start_date.tzinfo is None:
+                pub_start_date = pub_start_date.replace(tzinfo=timezone.utc)
+            else:
+                pub_start_date = pub_start_date.astimezone(timezone.utc)
+        if pub_end_date is not None:
+            if pub_end_date.tzinfo is None:
+                pub_end_date = pub_end_date.replace(tzinfo=timezone.utc)
+            else:
+                pub_end_date = pub_end_date.astimezone(timezone.utc)
 
         # Calculate dates if days_ago is specified
         if days_ago is not None:

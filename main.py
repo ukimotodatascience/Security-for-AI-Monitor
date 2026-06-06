@@ -90,6 +90,19 @@ def test_nvd_cve():
             print(
                 f"[{idx + 1}] CVE: {item.cve_id} | Published: {item.published_at} | CVSS: {item.cvss_base_score} ({item.cvss_base_label})"
             )
+
+        # Test 4: Fetch CVEs using aware datetime (e.g. JST, should be converted to UTC)
+        print("\nTesting NVD CVE Fetcher - Aware Datetime Filter (JST, Last 7 days)")
+        from datetime import timezone as py_timezone
+
+        jst_tz = py_timezone(timedelta(hours=9))
+        jst_start = datetime.now(jst_tz) - timedelta(days=7)
+        jst_results = fetcher.fetch(pub_start_date=jst_start, limit=2)
+        print(f"Total parsed JST aware datetime CVE models: {len(jst_results)}")
+        for idx, item in enumerate(jst_results):
+            print(
+                f"[{idx + 1}] CVE: {item.cve_id} | Published: {item.published_at} | CVSS: {item.cvss_base_score} ({item.cvss_base_label})"
+            )
     except Exception as e:
         print(f"Error testing NVD CVE: {e}", file=sys.stderr)
 
