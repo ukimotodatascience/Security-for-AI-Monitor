@@ -37,10 +37,30 @@ class NVDCVEFetcher(BaseFetcher):
             pub_end_date = datetime.now(timezone.utc)
             pub_start_date = pub_end_date - timedelta(days=days_ago)
         # Fallback default date range if no keyword and no date filter is provided
-        elif keyword is None and pub_start_date is None:
+        elif keyword is None and pub_start_date is None and pub_end_date is None:
             # Default to last 14 days to retrieve actually recent CVEs
             pub_end_date = datetime.now(timezone.utc)
             pub_start_date = pub_end_date - timedelta(days=14)
+
+        # Complement dates if only one boundary is specified (NVD API requires both)
+        if (pub_start_date is not None and pub_end_date is None) or (
+            pub_end_date is not None and pub_start_date is None
+        ):
+            if pub_start_date is not None:
+                pub_end_date = min(
+                    pub_start_date + timedelta(days=120), datetime.now(timezone.utc)
+                )
+            else:
+                pub_start_date = pub_end_date - timedelta(days=120)
+
+        # Validate publication date bounds if both are specified
+        if pub_start_date is not None and pub_end_date is not None:
+            if pub_start_date > pub_end_date:
+                raise ValueError("pub_start_date cannot be after pub_end_date")
+            if pub_end_date - pub_start_date > timedelta(days=120):
+                raise ValueError(
+                    "The date range for NVD publication filter cannot exceed 120 days."
+                )
 
         if pub_start_date:
             params["pubStartDate"] = pub_start_date.strftime("%Y-%m-%dT%H:%M:%S.000Z")
