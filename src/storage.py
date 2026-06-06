@@ -56,8 +56,19 @@ class FileStorage:
         # Remove duplicates based on the primary key, keeping the last (newest) record
         combined_df.drop_duplicates(subset=[primary_key], keep="last", inplace=True)
 
-        # Write back to Parquet
-        combined_df.to_parquet(filepath, index=False)
+        # Write back to Parquet atomically using a temporary file
+        temp_filepath = f"{filepath}.tmp"
+        try:
+            combined_df.to_parquet(temp_filepath, index=False)
+            os.replace(temp_filepath, filepath)
+        except Exception as e:
+            # Cleanup temporary file if it exists
+            if os.path.exists(temp_filepath):
+                try:
+                    os.remove(temp_filepath)
+                except Exception:
+                    pass
+            raise e
 
     def _load_models(self, model_class: Type[T], folder: str, filename: str) -> List[T]:
         """Loads a list of Pydantic models from a Parquet file."""
