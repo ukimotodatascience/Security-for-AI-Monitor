@@ -1,19 +1,21 @@
-from datetime import datetime
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 from src.base_fetcher import BaseFetcher
 from src.config import Config
 from src.models import AIKeywordModel, AIProductModel, NotionSourceModel
+
 
 class NotionFetcher(BaseFetcher):
     def __init__(self):
         super().__init__("NotionFetcher")
         # Validate that the Notion config is present
         Config.validate_notion_config()
-        self.headers.update({
-            "Authorization": f"Bearer {Config.NOTION_API_KEY}",
-            "Notion-Version": "2022-06-28",
-            "Content-Type": "application/json"
-        })
+        self.headers.update(
+            {
+                "Authorization": f"Bearer {Config.NOTION_API_KEY}",
+                "Notion-Version": "2022-06-28",
+                "Content-Type": "application/json",
+            }
+        )
 
     def _query_database(self, database_id: str) -> List[Dict[str, Any]]:
         """Query a Notion database and return all page results."""
@@ -28,11 +30,11 @@ class NotionFetcher(BaseFetcher):
                 payload = {}
                 if start_cursor:
                     payload["start_cursor"] = start_cursor
-                
+
                 response = client.post(url, json=payload)
                 response.raise_for_status()
                 data = response.json()
-                
+
                 results.extend(data.get("results", []))
                 has_more = data.get("has_more", False)
                 start_cursor = data.get("next_cursor")
@@ -45,7 +47,7 @@ class NotionFetcher(BaseFetcher):
         if not prop:
             return None
         prop_type = prop.get("type")
-        
+
         if prop_type == "title":
             titles = prop.get("title", [])
             return "".join([t.get("plain_text", "") for t in titles]) if titles else ""
@@ -74,7 +76,7 @@ class NotionFetcher(BaseFetcher):
             return prop.get("created_time")
         elif prop_type == "last_edited_time":
             return prop.get("last_edited_time")
-        
+
         return None
 
     def _get_properties_dict(self, page: Dict[str, Any]) -> Dict[str, Any]:
@@ -107,11 +109,13 @@ class NotionFetcher(BaseFetcher):
                     score=props.get("score"),
                     last_checked_at=props.get("last_checked_at"),
                     created_at=props.get("created_at") or created_time,
-                    updated_at=props.get("updated_at") or last_edited_time
+                    updated_at=props.get("updated_at") or last_edited_time,
                 )
                 results.append(model)
             except Exception as e:
-                self.logger.warning(f"Failed to parse source page {page.get('id')}: {e}")
+                self.logger.warning(
+                    f"Failed to parse source page {page.get('id')}: {e}"
+                )
         return results
 
     def fetch_keywords(self) -> List[AIKeywordModel]:
@@ -130,11 +134,13 @@ class NotionFetcher(BaseFetcher):
                     weight=float(props.get("weight") or 1.0),
                     status=props.get("status") or "active",
                     created_at=props.get("created_at") or created_time,
-                    updated_at=props.get("updated_at") or last_edited_time
+                    updated_at=props.get("updated_at") or last_edited_time,
                 )
                 results.append(model)
             except Exception as e:
-                self.logger.warning(f"Failed to parse keyword page {page.get('id')}: {e}")
+                self.logger.warning(
+                    f"Failed to parse keyword page {page.get('id')}: {e}"
+                )
         return results
 
     def fetch_products(self) -> List[AIProductModel]:
@@ -150,17 +156,19 @@ class NotionFetcher(BaseFetcher):
                     category=props.get("category") or "",
                     aliases=props.get("aliases") or [],
                     weight=float(props.get("weight") or 1.0),
-                    status=props.get("status") or "active"
+                    status=props.get("status") or "active",
                 )
                 results.append(model)
             except Exception as e:
-                self.logger.warning(f"Failed to parse product page {page.get('id')}: {e}")
+                self.logger.warning(
+                    f"Failed to parse product page {page.get('id')}: {e}"
+                )
         return results
 
     def fetch(self, **kwargs) -> List[Any]:
         """Fetch all Notion databases and return them as a flat list.
-        
-        Typically, users should call fetch_sources(), fetch_keywords(), 
+
+        Typically, users should call fetch_sources(), fetch_keywords(),
         or fetch_products() directly. This method acts as a combined runner.
         """
         self.logger.info("Fetching all Notion databases...")

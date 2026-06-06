@@ -3,6 +3,7 @@ from typing import List, Optional
 from src.base_fetcher import BaseFetcher
 from src.models import GitHubRepoModel
 
+
 class GitHubRepoFetcher(BaseFetcher):
     def __init__(self):
         super().__init__("GitHubRepoFetcher")
@@ -16,7 +17,9 @@ class GitHubRepoFetcher(BaseFetcher):
     def fetch_repo_details(self, repo_name: str) -> Optional[GitHubRepoModel]:
         """Fetch details for a specific repository (e.g. 'protectai/modelscan')."""
         url = f"https://api.github.com/repos/{repo_name}"
-        self.logger.info(f"Fetching details for repository '{repo_name}' from GitHub API...")
+        self.logger.info(
+            f"Fetching details for repository '{repo_name}' from GitHub API..."
+        )
 
         try:
             with self._get_client() as client:
@@ -32,11 +35,10 @@ class GitHubRepoFetcher(BaseFetcher):
     def search_repositories(self, query: str, limit: int = 10) -> List[GitHubRepoModel]:
         """Search repositories using GitHub Search API (e.g. 'topic:ml-security')."""
         url = "https://api.github.com/search/repositories"
-        params = {
-            "q": query,
-            "per_page": min(limit, 100)
-        }
-        self.logger.info(f"Searching repositories with query '{query}' from GitHub API...")
+        params = {"q": query, "per_page": min(limit, 100)}
+        self.logger.info(
+            f"Searching repositories with query '{query}' from GitHub API..."
+        )
 
         try:
             with self._get_client() as client:
@@ -52,7 +54,9 @@ class GitHubRepoFetcher(BaseFetcher):
                     results.append(model)
             return results
         except Exception as e:
-            self.logger.error(f"Failed to search repositories with query '{query}': {e}")
+            self.logger.error(
+                f"Failed to search repositories with query '{query}': {e}"
+            )
             return []
 
     def _map_to_model(self, item: dict) -> GitHubRepoModel:
@@ -70,13 +74,15 @@ class GitHubRepoFetcher(BaseFetcher):
             created_at=item.get("created_at"),
             updated_at=item.get("updated_at"),
             pushed_at=item.get("pushed_at"),
-            matched_keywords=[], # Handled by downstream matching logic
-            category=None
+            matched_keywords=[],  # Handled by downstream matching logic
+            category=None,
         )
 
-    def fetch(self, repo_names: List[str] = None, search_query: str = None, **kwargs) -> List[GitHubRepoModel]:
+    def fetch(
+        self, repo_names: List[str] = None, search_query: str = None, **kwargs
+    ) -> List[GitHubRepoModel]:
         """Fetch repositories details.
-        
+
         Args:
             repo_names: List of 'owner/repo' strings to fetch directly.
             search_query: Search query string to search for repositories.
@@ -87,7 +93,7 @@ class GitHubRepoFetcher(BaseFetcher):
                 model = self.fetch_repo_details(name)
                 if model:
                     results.append(model)
-        
+
         if search_query:
             limit = kwargs.get("limit", 10)
             search_results = self.search_repositories(search_query, limit=limit)

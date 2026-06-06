@@ -1,7 +1,8 @@
 from datetime import date, datetime
 import json
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, List, Optional
 from pydantic import BaseModel, Field, field_validator
+
 
 def parse_list_field(v: Any) -> List[str]:
     """Helper to parse Union[str, List[str]] into List[str]"""
@@ -22,6 +23,7 @@ def parse_list_field(v: Any) -> List[str]:
                 pass
         return [item.strip() for item in v.split(",") if item.strip()]
     return [str(v)]
+
 
 class CVEModel(BaseModel):
     cve_id: str
@@ -77,7 +79,14 @@ class ArXivModel(BaseModel):
     mitre_mapping: List[str] = Field(default_factory=list)
     importance_score: Optional[float] = None
 
-    @field_validator("authors", "categories", "keywords_matched", "owasp_mapping", "mitre_mapping", mode="before")
+    @field_validator(
+        "authors",
+        "categories",
+        "keywords_matched",
+        "owasp_mapping",
+        "mitre_mapping",
+        mode="before",
+    )
     @classmethod
     def validate_lists(cls, v: Any) -> List[str]:
         return parse_list_field(v)

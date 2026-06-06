@@ -1,8 +1,8 @@
-from datetime import datetime
 from typing import List, Optional
 from src.base_fetcher import BaseFetcher
 from src.config import Config
 from src.models import CVEModel
+
 
 class NVDCVEFetcher(BaseFetcher):
     def __init__(self):
@@ -11,9 +11,11 @@ class NVDCVEFetcher(BaseFetcher):
         if Config.NVD_API_KEY:
             self.headers["apiKey"] = Config.NVD_API_KEY
 
-    def fetch(self, keyword: Optional[str] = None, limit: int = 20, **kwargs) -> List[CVEModel]:
+    def fetch(
+        self, keyword: Optional[str] = None, limit: int = 20, **kwargs
+    ) -> List[CVEModel]:
         """Fetch CVEs from NVD API.
-        
+
         Optional search criteria:
         - keyword: search string in descriptions (e.g. "prompt injection" or "langchain")
         - limit: number of results to fetch (resultsPerPage)
@@ -21,7 +23,9 @@ class NVDCVEFetcher(BaseFetcher):
         params = {"resultsPerPage": min(limit, 2000)}
         if keyword:
             params["keywordSearch"] = keyword
-            self.logger.info(f"Fetching CVEs matching keyword '{keyword}' from {self.url}...")
+            self.logger.info(
+                f"Fetching CVEs matching keyword '{keyword}' from {self.url}..."
+            )
         else:
             self.logger.info(f"Fetching latest CVEs from {self.url}...")
 
@@ -95,14 +99,23 @@ class NVDCVEFetcher(BaseFetcher):
                 # 4. Extract CPE Names
                 configurations = cve_data.get("configurations", [])
                 cpe_names = []
-                for config in configurations:
-                    nodes = config.get("nodes", [])
-                    for node in nodes:
+
+                def extract_cpes(node_list: list):
+                    for node in node_list:
                         cpe_matches = node.get("cpeMatch", [])
                         for match in cpe_matches:
                             criteria = match.get("criteria")
                             if criteria:
                                 cpe_names.append(criteria)
+
+                        # Recurse into nested children nodes
+                        children = node.get("children", [])
+                        if children:
+                            extract_cpes(children)
+
+                for config in configurations:
+                    nodes = config.get("nodes", [])
+                    extract_cpes(nodes)
 
                 model = CVEModel(
                     cve_id=cve_id,
@@ -113,7 +126,7 @@ class NVDCVEFetcher(BaseFetcher):
                     cvss_base_score=cvss_base_score,
                     cvss_base_label=cvss_base_label,
                     cwe_ids=cwe_ids,
-                    cpe_names=cpe_names
+                    cpe_names=cpe_names,
                 )
                 results.append(model)
             except Exception as e:

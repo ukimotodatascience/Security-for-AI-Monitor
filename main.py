@@ -9,12 +9,13 @@ sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 # Load environment variables
 load_dotenv()
 
-from src.cisa_kev import CISAKEVFetcher
-from src.first_epss import FIRSTEPSSFetcher
-from src.nvd_cve import NVDCVEFetcher
-from src.arxiv import ArXivFetcher
-from src.github_repo import GitHubRepoFetcher
-from src.notion_source import NotionFetcher
+from src.cisa_kev import CISAKEVFetcher  # noqa: E402
+from src.first_epss import FIRSTEPSSFetcher  # noqa: E402
+from src.nvd_cve import NVDCVEFetcher  # noqa: E402
+from src.arxiv import ArXivFetcher  # noqa: E402
+from src.github_repo import GitHubRepoFetcher  # noqa: E402
+from src.notion_source import NotionFetcher  # noqa: E402
+
 
 def test_cisa_kev():
     print("\n========================================")
@@ -28,9 +29,12 @@ def test_cisa_kev():
         if results:
             print("\nFirst 3 parsed records:")
             for idx, item in enumerate(results[:3]):
-                print(f"[{idx+1}] CVE: {item.cve_id} | Product: {item.product} | Name: {item.vulnerablity_name} | Added: {item.added_date}")
+                print(
+                    f"[{idx + 1}] CVE: {item.cve_id} | Product: {item.product} | Name: {item.vulnerablity_name} | Added: {item.added_date}"
+                )
     except Exception as e:
         print(f"Error testing KISA KEV: {e}", file=sys.stderr)
+
 
 def test_first_epss():
     print("\n========================================")
@@ -43,9 +47,12 @@ def test_first_epss():
         results = fetcher.fetch(cve_ids=cve_ids)
         print(f"Total parsed EPSS models: {len(results)}")
         for idx, item in enumerate(results):
-            print(f"[{idx+1}] CVE: {item.cve_id} | EPSS: {item.epss} | Percentile: {item.percentile} | Date: {item.date}")
+            print(
+                f"[{idx + 1}] CVE: {item.cve_id} | EPSS: {item.epss} | Percentile: {item.percentile} | Date: {item.date}"
+            )
     except Exception as e:
         print(f"Error testing FIRST EPSS: {e}", file=sys.stderr)
+
 
 def test_nvd_cve():
     print("\n========================================")
@@ -57,11 +64,14 @@ def test_nvd_cve():
         results = fetcher.fetch(keyword="prompt injection", limit=3)
         print(f"Total parsed CVE models: {len(results)}")
         for idx, item in enumerate(results):
-            print(f"[{idx+1}] CVE: {item.cve_id} | Published: {item.published_at} | CVSS: {item.cvss_base_score} ({item.cvss_base_label})")
+            print(
+                f"[{idx + 1}] CVE: {item.cve_id} | Published: {item.published_at} | CVSS: {item.cvss_base_score} ({item.cvss_base_label})"
+            )
             print(f"    Description: {item.description[:150]}...")
             print(f"    CWEs: {item.cwe_ids}")
     except Exception as e:
         print(f"Error testing NVD CVE: {e}", file=sys.stderr)
+
 
 def test_arxiv():
     print("\n========================================")
@@ -73,12 +83,13 @@ def test_arxiv():
         results = fetcher.fetch(query='all:"prompt injection"', limit=3)
         print(f"Total parsed ArXiv models: {len(results)}")
         for idx, item in enumerate(results):
-            print(f"[{idx+1}] ID: {item.arxiv_id} | Published: {item.published_at}")
+            print(f"[{idx + 1}] ID: {item.arxiv_id} | Published: {item.published_at}")
             print(f"    Title: {item.title}")
             print(f"    Authors: {', '.join(item.authors)}")
             print(f"    PDF URL: {item.pdf_url}")
     except Exception as e:
         print(f"Error testing arXiv: {e}", file=sys.stderr)
+
 
 def test_github():
     print("\n========================================")
@@ -90,11 +101,14 @@ def test_github():
         results = fetcher.fetch(repo_names=["langchain-ai/langchain"])
         print(f"Total parsed GitHubRepo models: {len(results)}")
         for idx, item in enumerate(results):
-            print(f"[{idx+1}] ID: {item.repo_id} | Full Name: {item.full_name} | Stars: {item.stars}")
+            print(
+                f"[{idx + 1}] ID: {item.repo_id} | Full Name: {item.full_name} | Stars: {item.stars}"
+            )
             print(f"    URL: {item.html_url}")
             print(f"    Topics: {item.topics}")
     except Exception as e:
         print(f"Error testing GitHub: {e}", file=sys.stderr)
+
 
 def test_notion():
     print("\n========================================")
@@ -107,27 +121,36 @@ def test_notion():
         sources = fetcher.fetch_sources()
         print(f"Total parsed sources: {len(sources)}")
         for idx, item in enumerate(sources[:3]):
-            print(f"Source [{idx+1}]: {item.name} | Type: {item.type} | URL: {item.url}")
-            
+            print(
+                f"Source [{idx + 1}]: {item.name} | Type: {item.type} | URL: {item.url}"
+            )
+
         keywords = fetcher.fetch_keywords()
         print(f"Total parsed keywords: {len(keywords)}")
         for idx, item in enumerate(keywords[:3]):
-            print(f"Keyword [{idx+1}]: {item.keyword} | Category: {item.category} | Weight: {item.weight}")
+            print(
+                f"Keyword [{idx + 1}]: {item.keyword} | Category: {item.category} | Weight: {item.weight}"
+            )
 
         products = fetcher.fetch_products()
         print(f"Total parsed products: {len(products)}")
         for idx, item in enumerate(products[:3]):
-            print(f"Product [{idx+1}]: {item.product_name} | Vendor: {item.vendor} | Aliases: {item.aliases}")
-            
+            print(
+                f"Product [{idx + 1}]: {item.product_name} | Vendor: {item.vendor} | Aliases: {item.aliases}"
+            )
+
     except ValueError as ve:
         # Expected error if credentials are not configured in environment
-        print(f"Notion Configuration Error (as expected if credentials are not set): {ve}")
+        print(
+            f"Notion Configuration Error (as expected if credentials are not set): {ve}"
+        )
     except Exception as e:
         print(f"Error querying Notion API: {e}", file=sys.stderr)
 
+
 def main():
     print("Starting Security-for-AI-Monitor Data Acquisition Test Suite")
-    
+
     test_cisa_kev()
     time.sleep(3)
     test_first_epss()
@@ -139,8 +162,9 @@ def main():
     test_github()
     time.sleep(3)
     test_notion()
-    
+
     print("\nTest Suite Completed.")
+
 
 if __name__ == "__main__":
     main()

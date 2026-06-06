@@ -3,6 +3,7 @@ from src.base_fetcher import BaseFetcher
 from src.config import Config
 from src.models import EPSSModel
 
+
 class FIRSTEPSSFetcher(BaseFetcher):
     def __init__(self):
         super().__init__("FIRSTEPSSFetcher")
@@ -10,14 +11,16 @@ class FIRSTEPSSFetcher(BaseFetcher):
 
     def fetch(self, cve_ids: List[str] = None, **kwargs) -> List[EPSSModel]:
         """Fetch EPSS scores for given CVE IDs.
-        
+
         If cve_ids is empty or not provided, fetch the top/latest records (limited by API).
         """
         params = {}
         if cve_ids:
             # EPSS API supports comma-separated CVEs
             params["cve"] = ",".join(cve_ids)
-            self.logger.info(f"Fetching EPSS scores for {len(cve_ids)} CVEs from {self.url}...")
+            self.logger.info(
+                f"Fetching EPSS scores for {len(cve_ids)} CVEs from {self.url}..."
+            )
         else:
             self.logger.info(f"Fetching latest EPSS scores from {self.url}...")
 
@@ -49,7 +52,7 @@ class FIRSTEPSSFetcher(BaseFetcher):
                     cve_id=r.get("cve"),
                     epss=float(r.get("epss", 0.0)),
                     percentile=float(r.get("percentile", 0.0)),
-                    date=r.get("date")
+                    date=r.get("date"),
                 )
                 results.append(model)
             except Exception as e:
