@@ -72,16 +72,19 @@ class FileStorage:
         df = pd.read_parquet(filepath)
         records = df.to_dict(orient="records")
 
-        # Normalize NaN/NaT values to None to prevent Pydantic validation errors on optional fields
+        # Normalize NaN/NaT values to None and convert arrays to lists to prevent Pydantic validation errors
         cleaned_records = []
         for r in records:
             cleaned_r = {}
             for k, v in r.items():
-                # Avoid calling pd.isna() on sequence/array objects as it raises ValueError
-                if isinstance(v, (list, dict)) or (
-                    hasattr(v, "__len__") and not isinstance(v, (str, bytes))
-                ):
+                if isinstance(v, (list, dict)):
                     cleaned_r[k] = v
+                elif hasattr(v, "__len__") and not isinstance(v, (str, bytes)):
+                    # Convert numpy.ndarray, tuples, etc. to plain Python lists
+                    if hasattr(v, "tolist"):
+                        cleaned_r[k] = v.tolist()
+                    else:
+                        cleaned_r[k] = list(v)
                 elif pd.isna(v):
                     cleaned_r[k] = None
                 else:
