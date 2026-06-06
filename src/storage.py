@@ -47,13 +47,9 @@ class FileStorage:
 
         # Check if existing file exists to merge
         if os.path.exists(filepath):
-            try:
-                existing_df = pd.read_parquet(filepath)
-                # Concatenate existing and new data
-                combined_df = pd.concat([existing_df, new_df], ignore_index=True)
-            except Exception:
-                # If read fails, fallback to using new data only
-                combined_df = new_df
+            existing_df = pd.read_parquet(filepath)
+            # Concatenate existing and new data
+            combined_df = pd.concat([existing_df, new_df], ignore_index=True)
         else:
             combined_df = new_df
 
