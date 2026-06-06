@@ -78,6 +78,18 @@ def test_nvd_cve():
             print(
                 f"[{idx + 1}] CVE: {item.cve_id} | Published: {item.published_at} | CVSS: {item.cvss_base_score} ({item.cvss_base_label})"
             )
+
+        # Test 3: Fetch CVEs using naive datetime (should be normalized internally)
+        print("\nTesting NVD CVE Fetcher - Naive Datetime Filter (Last 7 days)")
+        from datetime import datetime, timedelta
+
+        naive_start = datetime.utcnow() - timedelta(days=7)
+        naive_results = fetcher.fetch(pub_start_date=naive_start, limit=2)
+        print(f"Total parsed naive datetime CVE models: {len(naive_results)}")
+        for idx, item in enumerate(naive_results):
+            print(
+                f"[{idx + 1}] CVE: {item.cve_id} | Published: {item.published_at} | CVSS: {item.cvss_base_score} ({item.cvss_base_label})"
+            )
     except Exception as e:
         print(f"Error testing NVD CVE: {e}", file=sys.stderr)
 
