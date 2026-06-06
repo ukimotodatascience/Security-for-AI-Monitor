@@ -1,4 +1,5 @@
 import os
+import uuid
 import pandas as pd
 from typing import List, TypeVar, Type
 from pydantic import BaseModel
@@ -56,8 +57,9 @@ class FileStorage:
         # Remove duplicates based on the primary key, keeping the last (newest) record
         combined_df.drop_duplicates(subset=[primary_key], keep="last", inplace=True)
 
-        # Write back to Parquet atomically using a temporary file
-        temp_filepath = f"{filepath}.tmp"
+        # Write back to Parquet atomically using a unique temporary file
+        temp_filename = f"{filename}.{uuid.uuid4().hex}.tmp"
+        temp_filepath = os.path.join(target_dir, temp_filename)
         try:
             combined_df.to_parquet(temp_filepath, index=False)
             os.replace(temp_filepath, filepath)
