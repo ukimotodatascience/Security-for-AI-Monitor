@@ -21,4 +21,5 @@ repos:
     rev: v8.28.0
     hooks:
       - id: gitleaks
+        # NOTE: This hook scans staged files only by default (protect --staged).
         args: ["--redact"]
