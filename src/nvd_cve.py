@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from src.base_fetcher import BaseFetcher
 from src.config import Config
@@ -12,22 +13,49 @@ class NVDCVEFetcher(BaseFetcher):
             self.headers["apiKey"] = Config.NVD_API_KEY
 
     def fetch(
-        self, keyword: Optional[str] = None, limit: int = 20, **kwargs
+        self,
+        keyword: Optional[str] = None,
+        limit: int = 20,
+        pub_start_date: Optional[datetime] = None,
+        pub_end_date: Optional[datetime] = None,
+        days_ago: Optional[int] = None,
+        **kwargs,
     ) -> List[CVEModel]:
         """Fetch CVEs from NVD API.
 
         Optional search criteria:
         - keyword: search string in descriptions (e.g. "prompt injection" or "langchain")
         - limit: number of results to fetch (resultsPerPage)
+        - pub_start_date: filter by publish start date
+        - pub_end_date: filter by publish end date
+        - days_ago: filter by publish date within the last N days (e.g. 14)
         """
         params = {"resultsPerPage": min(limit, 2000)}
+
+        # Calculate dates if days_ago is specified
+        if days_ago is not None:
+            pub_end_date = datetime.now(timezone.utc)
+            pub_start_date = pub_end_date - timedelta(days=days_ago)
+        # Fallback default date range if no keyword and no date filter is provided
+        elif keyword is None and pub_start_date is None:
+            # Default to last 14 days to retrieve actually recent CVEs
+            pub_end_date = datetime.now(timezone.utc)
+            pub_start_date = pub_end_date - timedelta(days=14)
+
+        if pub_start_date:
+            params["pubStartDate"] = pub_start_date.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+        if pub_end_date:
+            params["pubEndDate"] = pub_end_date.strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
         if keyword:
             params["keywordSearch"] = keyword
             self.logger.info(
                 f"Fetching CVEs matching keyword '{keyword}' from {self.url}..."
             )
         else:
-            self.logger.info(f"Fetching latest CVEs from {self.url}...")
+            self.logger.info(
+                f"Fetching latest CVEs from {self.url} between {params.get('pubStartDate')} and {params.get('pubEndDate')}..."
+            )
 
         with self._get_client() as client:
             response = client.get(self.url, params=params)

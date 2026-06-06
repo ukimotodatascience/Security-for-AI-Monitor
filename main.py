@@ -69,6 +69,15 @@ def test_nvd_cve():
             )
             print(f"    Description: {item.description[:150]}...")
             print(f"    CWEs: {item.cwe_ids}")
+
+        # Test 2: Fetch latest CVEs (no keyword, using default 14-days pub date filter)
+        print("\nTesting NVD CVE Fetcher - Latest CVEs (Last 14 days)")
+        latest_results = fetcher.fetch(limit=3)
+        print(f"Total parsed latest CVE models: {len(latest_results)}")
+        for idx, item in enumerate(latest_results):
+            print(
+                f"[{idx + 1}] CVE: {item.cve_id} | Published: {item.published_at} | CVSS: {item.cvss_base_score} ({item.cvss_base_label})"
+            )
     except Exception as e:
         print(f"Error testing NVD CVE: {e}", file=sys.stderr)
 
