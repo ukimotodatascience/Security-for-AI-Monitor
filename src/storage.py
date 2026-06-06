@@ -72,8 +72,24 @@ class FileStorage:
         df = pd.read_parquet(filepath)
         records = df.to_dict(orient="records")
 
+        # Normalize NaN/NaT values to None to prevent Pydantic validation errors on optional fields
+        cleaned_records = []
+        for r in records:
+            cleaned_r = {}
+            for k, v in r.items():
+                # Avoid calling pd.isna() on sequence/array objects as it raises ValueError
+                if isinstance(v, (list, dict)) or (
+                    hasattr(v, "__len__") and not isinstance(v, (str, bytes))
+                ):
+                    cleaned_r[k] = v
+                elif pd.isna(v):
+                    cleaned_r[k] = None
+                else:
+                    cleaned_r[k] = v
+            cleaned_records.append(cleaned_r)
+
         # Pydantic v2 uses model_validate to parse dictionaries
-        return [model_class.model_validate(r) for r in records]
+        return [model_class.model_validate(r) for r in cleaned_records]
 
     # CVE
     def save_cves(self, cves: List[CVEModel]) -> None:
