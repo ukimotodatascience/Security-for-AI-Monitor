@@ -3,6 +3,7 @@ import uuid
 import pandas as pd
 from typing import List, TypeVar, Type
 from pydantic import BaseModel
+from filelock import FileLock
 from src.models import (
     CVEModel,
     EPSSModel,
@@ -31,7 +32,7 @@ class FileStorage:
     ) -> None:
         """Saves a list of Pydantic models to a Parquet file, executing an Upsert
 
-        based on the primary key.
+        based on the primary key. Acquires a file lock to prevent concurrent write issues.
         """
         if not items:
             return
@@ -41,36 +42,40 @@ class FileStorage:
         os.makedirs(target_dir, exist_ok=True)
         filepath = os.path.join(target_dir, f"{filename}.parquet")
 
-        # Convert Pydantic models to dictionaries
-        # Using model_dump() keeps date/datetime objects, which pandas translates well for Parquet.
-        data = [item.model_dump() for item in items]
-        new_df = pd.DataFrame(data)
+        lock_filepath = f"{filepath}.lock"
+        lock = FileLock(lock_filepath)
 
-        # Check if existing file exists to merge
-        if os.path.exists(filepath):
-            existing_df = pd.read_parquet(filepath)
-            # Concatenate existing and new data
-            combined_df = pd.concat([existing_df, new_df], ignore_index=True)
-        else:
-            combined_df = new_df
+        with lock:
+            # Convert Pydantic models to dictionaries
+            # Using model_dump() keeps date/datetime objects, which pandas translates well for Parquet.
+            data = [item.model_dump() for item in items]
+            new_df = pd.DataFrame(data)
 
-        # Remove duplicates based on the primary key, keeping the last (newest) record
-        combined_df.drop_duplicates(subset=[primary_key], keep="last", inplace=True)
+            # Check if existing file exists to merge
+            if os.path.exists(filepath):
+                existing_df = pd.read_parquet(filepath)
+                # Concatenate existing and new data
+                combined_df = pd.concat([existing_df, new_df], ignore_index=True)
+            else:
+                combined_df = new_df
 
-        # Write back to Parquet atomically using a unique temporary file
-        temp_filename = f"{filename}.{uuid.uuid4().hex}.tmp"
-        temp_filepath = os.path.join(target_dir, temp_filename)
-        try:
-            combined_df.to_parquet(temp_filepath, index=False)
-            os.replace(temp_filepath, filepath)
-        except Exception as e:
-            # Cleanup temporary file if it exists
-            if os.path.exists(temp_filepath):
-                try:
-                    os.remove(temp_filepath)
-                except Exception:
-                    pass
-            raise e
+            # Remove duplicates based on the primary key, keeping the last (newest) record
+            combined_df.drop_duplicates(subset=[primary_key], keep="last", inplace=True)
+
+            # Write back to Parquet atomically using a unique temporary file
+            temp_filename = f"{filename}.{uuid.uuid4().hex}.tmp"
+            temp_filepath = os.path.join(target_dir, temp_filename)
+            try:
+                combined_df.to_parquet(temp_filepath, index=False)
+                os.replace(temp_filepath, filepath)
+            except Exception as e:
+                # Cleanup temporary file if it exists
+                if os.path.exists(temp_filepath):
+                    try:
+                        os.remove(temp_filepath)
+                    except Exception:
+                        pass
+                raise e
 
     def _load_models(self, model_class: Type[T], folder: str, filename: str) -> List[T]:
         """Loads a list of Pydantic models from a Parquet file."""
