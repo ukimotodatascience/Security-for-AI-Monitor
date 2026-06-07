@@ -108,7 +108,7 @@ class GitHubAdvisoryFetcher(BaseFetcher):
                     ):
                         is_ai_related = True
 
-                    p_version = vuln.get("patched_versions")
+                    p_version = vuln.get("first_patched_version")
                     if p_version:
                         patched_versions.append(p_version)
 
