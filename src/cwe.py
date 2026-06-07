@@ -1,3 +1,4 @@
+import time
 from typing import List
 from src.base_fetcher import BaseFetcher
 from src.models import CWEModel
@@ -34,37 +35,42 @@ class CWEFetcher(BaseFetcher):
         if not clean_ids:
             return []
 
-        # API expects comma-separated IDs
-        ids_param = ",".join(clean_ids)
-        url = f"{self.base_url}/{ids_param}"
-
-        self.logger.info(f"Fetching CWE data for {cwe_ids} from {url}...")
-        try:
-            with self._get_client() as client:
-                response = client.get(url, timeout=15.0)
-                response.raise_for_status()
-                data = response.json()
-        except Exception as e:
-            self.logger.error(f"Failed to fetch CWE details: {e}")
-            return []
-
-        weaknesses = data.get("Weaknesses", [])
-        self.logger.info(f"Fetched {len(weaknesses)} CWEs from API.")
-
         results = []
-        for item in weaknesses:
-            raw_id = item.get("ID")
-            if not raw_id:
-                continue
+        with self._get_client() as client:
+            for cid in clean_ids:
+                url = f"{self.base_url}/{cid}"
+                self.logger.info(f"Fetching CWE data for CWE-{cid} from {url}...")
+                try:
+                    response = client.get(url, timeout=15.0)
+                    if response.status_code == 404:
+                        self.logger.warning(
+                            f"CWE-{cid} not found (404) on MITRE API. It might be a Category or deprecated."
+                        )
+                        continue
+                    response.raise_for_status()
+                    data = response.json()
 
-            cwe_id = f"CWE-{raw_id}"
-            model = CWEModel(
-                cwe_id=cwe_id,
-                name=item.get("Name", ""),
-                description=item.get("Description", ""),
-                abstraction=item.get("Abstraction", ""),
-                status=item.get("Status", ""),
-            )
-            results.append(model)
+                    weaknesses = data.get("Weaknesses", [])
+                    for item in weaknesses:
+                        raw_id = item.get("ID")
+                        if not raw_id:
+                            continue
+                        cwe_id = f"CWE-{raw_id}"
+                        model = CWEModel(
+                            cwe_id=cwe_id,
+                            name=item.get("Name", ""),
+                            description=item.get("Description", ""),
+                            abstraction=item.get("Abstraction", ""),
+                            status=item.get("Status", ""),
+                        )
+                        results.append(model)
 
+                    # Sleep slightly to be polite to the API
+                    time.sleep(0.1)
+                except Exception as e:
+                    self.logger.error(f"Failed to fetch details for CWE-{cid}: {e}")
+
+        self.logger.info(
+            f"Fetched {len(results)} CWE details out of {len(clean_ids)} requested."
+        )
         return results
