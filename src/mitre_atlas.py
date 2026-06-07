@@ -93,7 +93,29 @@ class ATLASFetcher(BaseFetcher):
             )
             parsed_case_studies.append(case_model)
 
-        # 3. Parse Tactics
+        # 3. Map technique ID -> tactic ID (derived from achieves and employs relationships)
+        tech_to_tactic: Dict[str, str] = {}
+        for source_id, rels in relationships.items():
+            if source_id.startswith("AML.T"):
+                for ach in rels.get("achieves", []):
+                    tgt = ach.get("target")
+                    if tgt and tgt.startswith("AML.TA"):
+                        tech_to_tactic[source_id] = tgt
+
+        for source_id, rels in relationships.items():
+            for emp in rels.get("employs", []):
+                tgt = emp.get("target")
+                tactic = emp.get("tactic")
+                if (
+                    tgt
+                    and tgt.startswith("AML.T")
+                    and tactic
+                    and tactic.startswith("AML.TA")
+                ):
+                    if tgt not in tech_to_tactic:
+                        tech_to_tactic[tgt] = tactic
+
+        # 4. Parse Tactics
         parsed_tactics: List[ATLASTacticModel] = []
         for t_id, tac in raw_tactics.items():
             name = tac.get("name", "")
@@ -102,18 +124,14 @@ class ATLASFetcher(BaseFetcher):
                 ATLASTacticModel(tactic_id=t_id, name=name, description=desc)
             )
 
-        # 4. Parse Techniques
+        # 5. Parse Techniques
         parsed_techniques: List[ATLASTechniqueModel] = []
         for tech_id, tech in raw_techniques.items():
             name = tech.get("name", "")
             desc = tech.get("description", "")
 
-            # Get tactic ID from achieves relationship
-            rel = relationships.get(tech_id, {})
-            tactic_id = ""
-            ach_rels = rel.get("achieves", [])
-            if ach_rels:
-                tactic_id = ach_rels[0].get("target", "")
+            # Get tactic ID from achieves or employs relationship map
+            tactic_id = tech_to_tactic.get(tech_id, "")
 
             mitigations = tech_to_mitigations.get(tech_id, [])
             examples = tech_to_examples.get(tech_id, [])
