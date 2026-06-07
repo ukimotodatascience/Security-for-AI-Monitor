@@ -69,7 +69,9 @@ graph TD
     %% 依存解決処理
     cve -->|CVE ID抽出| FIRST
     ghsa -->|CVE ID抽出| FIRST
+    kev -->|CVE ID抽出| FIRST
     FIRST --> epss
+
 
     cve -->|CWE ID抽出| CWE
     CWE --> cwe_data
