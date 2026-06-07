@@ -258,6 +258,9 @@ def run_pipeline():
         all_cves = []
         all_cpes = []
 
+        # Determine NVD query delay based on API key availability (6.0 seconds for no-key, 0.6 seconds for key)
+        nvd_delay = 0.6 if Config.NVD_API_KEY else 6.0
+
         # A. Fetch CVEs by keyword (limit 50 per keyword to avoid API overloading)
         for kw in active_keywords:
             logger.info(f"Querying NVD CVEs for keyword: '{kw}'")
@@ -268,11 +271,11 @@ def run_pipeline():
                     nvd_fetcher.last_raw_vulnerabilities
                 )
                 all_cpes.extend(cpes)
-
-                # Prevent aggressive polling
-                time.sleep(3)
             except Exception as kw_e:
                 logger.error(f"Error querying NVD for keyword '{kw}': {kw_e}")
+
+            # Always sleep between requests (even if failed) to respect rate limits
+            time.sleep(nvd_delay)
 
         # B. Fetch Latest CVEs (Last 14 days, limit 100)
         logger.info("Querying NVD for latest CVEs (last 14 days)...")
@@ -283,6 +286,8 @@ def run_pipeline():
                 nvd_fetcher.last_raw_vulnerabilities
             )
             all_cpes.extend(latest_cpes)
+            # Sleep after the latest CVE request as well
+            time.sleep(nvd_delay)
         except Exception as latest_e:
             logger.error(f"Error querying latest NVD CVEs: {latest_e}")
 
