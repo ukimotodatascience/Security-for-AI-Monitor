@@ -159,10 +159,11 @@ CVEに関連する影響製品（CPE）の詳細情報。
 * `vulnerable` (bool): 該当製品構成が脆弱であるか否か
 * `vendor` (str): ベンダー名
 * `product` (str): 製品名
-* `version_start` (Optional[str]): 影響開始バージョン（未満）
-* `version_end` (Optional[str]): 影響終了バージョン（未満）
-* `version_start_including` (Optional[str]): 影響開始バージョン（以上）
-* `version_end_including` (Optional[str]): 影響終了バージョン（以下）
+* `version_start` (Optional[str]): 影響開始バージョン（このバージョンを超える / 排他的な下限）
+* `version_end` (Optional[str]): 影響終了バージョン（このバージョン未満 / 排他的な上限）
+* `version_start_including` (Optional[str]): 影響開始バージョン（このバージョン以上 / 包含的な下限）
+* `version_end_including` (Optional[str]): 影響終了バージョン（このバージョン以下 / 包含的な上限）
+
 
 #### EPSSModel
 FIRST APIから取得した悪用可能性予測スコア。
