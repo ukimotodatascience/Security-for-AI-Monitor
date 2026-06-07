@@ -138,6 +138,7 @@ def run_pipeline():
     storage = FileStorage(base_dir=base_raw_dir)
 
     # Track stats for summary
+    failed_stages = []
     stats = {
         "notion_sources": 0,
         "notion_keywords": 0,
@@ -190,6 +191,9 @@ def run_pipeline():
         notion_success = True
     except Exception as e:
         logger.error(f"Failed to fetch data from Notion: {e}")
+        # Mark notion as failed if Notion API keys are present (attempting production run)
+        if Config.NOTION_API_KEY:
+            failed_stages.append("notion")
         sources, keywords, products = get_default_mock_data()
         stats["notion_sources"] = len(sources)
         stats["notion_keywords"] = len(keywords)
@@ -224,6 +228,7 @@ def run_pipeline():
             )
     except Exception as e:
         logger.error(f"Error fetching CISA KEV: {e}")
+        failed_stages.append("cisa_kev")
 
     # 3. MITRE ATLAS (Bulk Ingestion)
     logger.info("--- [MITRE ATLAS Ingestion] ---")
@@ -244,6 +249,7 @@ def run_pipeline():
         )
     except Exception as e:
         logger.error(f"Error fetching MITRE ATLAS data: {e}")
+        failed_stages.append("mitre_atlas")
 
     # 4. NVD CVE & CPE (Keyword based + Latest)
     logger.info("--- [NVD CVE & CPE Ingestion] ---")
@@ -297,6 +303,7 @@ def run_pipeline():
         )
     except Exception as e:
         logger.error(f"General error during NVD CVE/CPE ingestion: {e}")
+        failed_stages.append("nvd_cve")
 
     # 5. arXiv (Keyword based)
     logger.info("--- [arXiv Ingestion] ---")
@@ -322,6 +329,7 @@ def run_pipeline():
         logger.info(f"Processed arXiv papers: {len(all_papers)} items.")
     except Exception as e:
         logger.error(f"General error during arXiv ingestion: {e}")
+        failed_stages.append("arxiv")
 
     # 6. GitHub Repositories (Product based + Search)
     logger.info("--- [GitHub Repository Ingestion] ---")
@@ -362,6 +370,7 @@ def run_pipeline():
         logger.info(f"Processed GitHub Repositories: {len(all_repos)} items.")
     except Exception as e:
         logger.error(f"General error during GitHub Repository ingestion: {e}")
+        failed_stages.append("github_repos")
 
     # 7. GitHub Security Advisory (GHSA)
     logger.info("--- [GitHub Security Advisory (GHSA) Ingestion] ---")
@@ -381,6 +390,7 @@ def run_pipeline():
             )
     except Exception as e:
         logger.error(f"Error fetching GitHub Security Advisories: {e}")
+        failed_stages.append("ghsa")
 
     # 8. Dependency Resolution: FIRST EPSS Scores (Based on collected CVE IDs)
     logger.info("--- [FIRST EPSS Score Ingestion] ---")
@@ -414,6 +424,7 @@ def run_pipeline():
                 logger.info(f"Successfully stored {len(all_epss)} EPSS scores.")
         except Exception as e:
             logger.error(f"General error during EPSS ingestion: {e}")
+            failed_stages.append("epss_scores")
     else:
         logger.info("No CVEs collected in this run. Skipping EPSS fetch.")
 
@@ -451,6 +462,7 @@ def run_pipeline():
             logger.info("No new CWE IDs to resolve. Skipping CWE fetch.")
     except Exception as e:
         logger.error(f"Error resolving CWE details: {e}")
+        failed_stages.append("cwes")
 
     # 10. RSS Feeds Crawl
     logger.info("--- [RSS Feed Crawler] ---")
@@ -471,6 +483,7 @@ def run_pipeline():
         )
     except Exception as e:
         logger.error(f"Error executing RSS crawl: {e}")
+        failed_stages.append("rss")
 
     # --- Summary ---
     logger.info("==================================================")
@@ -494,9 +507,35 @@ def run_pipeline():
     logger.info(f"EPSS Scores Fetched:           {stats['epss_scores']}")
     logger.info(f"CWEs Resolved:                 {stats['cwes']}")
     logger.info(f"RSS Articles Parsed:           {stats['rss_articles']}")
-    logger.info(f"RSS News Parsed:               {stats['rss_news']}")
+    logger.info("RSS News Parsed:               {}".format(stats["rss_news"]))
     logger.info("==================================================")
-    logger.info("Pipeline Execution Completed Successfully.")
+
+    if failed_stages:
+        logger.warning(f"Failed Ingestion Stages: {', '.join(failed_stages)}")
+    logger.info("==================================================")
+
+    # Check for critical failures (Notion if env config was present, NVD CVE, CISA KEV, MITRE ATLAS)
+    critical_failures = [
+        stage
+        for stage in failed_stages
+        if stage in ["notion", "cisa_kev", "mitre_atlas", "nvd_cve"]
+    ]
+
+    # Check if all ingestion stages failed (total stages = 9)
+    total_ingestion_stages = 9
+    all_failed = len(failed_stages) >= total_ingestion_stages
+
+    if critical_failures:
+        logger.error(
+            f"Pipeline finished with CRITICAL failures: {', '.join(critical_failures)}"
+        )
+        sys.exit(1)
+    elif all_failed:
+        logger.error("Pipeline finished but ALL ingestion stages failed.")
+        sys.exit(1)
+    else:
+        logger.info("Pipeline Execution Completed Successfully.")
+        sys.exit(0)
 
 
 if __name__ == "__main__":
