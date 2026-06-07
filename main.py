@@ -16,6 +16,12 @@ from src.arxiv import ArXivFetcher  # noqa: E402
 from src.github_repo import GitHubRepoFetcher  # noqa: E402
 from src.notion_source import NotionFetcher  # noqa: E402
 from src.storage import FileStorage  # noqa: E402
+from src.mitre_atlas import ATLASFetcher  # noqa: E402
+from src.cwe import CWEFetcher  # noqa: E402
+from src.github_advisory import GitHubAdvisoryFetcher  # noqa: E402
+from src.rss_source import RSSFetcher  # noqa: E402
+from src.models import NotionSourceModel  # noqa: E402
+from datetime import datetime, timezone  # noqa: E402
 
 # Initialize FileStorage (uses default root data/raw)
 storage = FileStorage()
@@ -230,6 +236,160 @@ def test_notion():
         print(f"Error querying Notion API: {e}", file=sys.stderr)
 
 
+def test_mitre_atlas():
+    print("\n========================================")
+    print("Testing MITRE ATLAS Fetcher & Storage")
+    print("========================================")
+    try:
+        fetcher = ATLASFetcher()
+        tactics, techniques, case_studies = fetcher.fetch()
+
+        # Save to Parquet
+        storage.save_atlas_tactics(tactics)
+        storage.save_atlas_techniques(techniques)
+        storage.save_atlas_case_studies(case_studies)
+        print("MITRE ATLAS data successfully saved to Parquet.")
+
+        # Load and verify
+        loaded_tactics = storage.load_atlas_tactics()
+        loaded_techniques = storage.load_atlas_techniques()
+        loaded_cases = storage.load_atlas_case_studies()
+
+        print(
+            f"Loaded from Parquet: {len(loaded_tactics)} Tactics, {len(loaded_techniques)} Techniques, {len(loaded_cases)} Case Studies."
+        )
+
+        if loaded_tactics:
+            print(
+                f"  First Tactic: {loaded_tactics[0].tactic_id} | {loaded_tactics[0].name}"
+            )
+        if loaded_techniques:
+            print(
+                f"  First Technique: {loaded_techniques[0].technique_id} | {loaded_techniques[0].name} | mitigations: {len(loaded_techniques[0].mitigations)}"
+            )
+        if loaded_cases:
+            print(
+                f"  First Case Study: {loaded_cases[0].case_id} | {loaded_cases[0].title} | techniques: {loaded_cases[0].related_techniques}"
+            )
+    except Exception as e:
+        print(f"Error testing MITRE ATLAS: {e}", file=sys.stderr)
+
+
+def test_cwe_and_cpe():
+    print("\n========================================")
+    print("Testing CWE Fetcher, CPE Extraction & Storage")
+    print("========================================")
+    try:
+        # 1. Fetch CVEs to extract CPEs and CWE IDs
+        cve_fetcher = NVDCVEFetcher()
+        cves = cve_fetcher.fetch(keyword="prompt injection", limit=2)
+        print(f"Fetched {len(cves)} CVEs for CPE extraction.")
+
+        # Extract CPEs
+        cpes = cve_fetcher.extract_cpe_models(cve_fetcher.last_raw_vulnerabilities)
+        storage.save_cpe(cpes)
+        print("CPE models successfully saved to Parquet.")
+
+        loaded_cpes = storage.load_cpe()
+        print(f"Total loaded CPEs from Parquet: {len(loaded_cpes)}")
+        for idx, item in enumerate(loaded_cpes[:3]):
+            print(
+                f"  [{idx + 1}] CVE: {item.cve_id} | CPE: {item.cpe_name} | Vendor: {item.vendor} | Product: {item.product}"
+            )
+
+        # 2. Fetch CWE details
+        cwe_ids = []
+        for cve in cves:
+            cwe_ids.extend(cve.cwe_ids)
+
+        if not cwe_ids:
+            cwe_ids = ["CWE-79", "CWE-89"]
+
+        cwe_fetcher = CWEFetcher()
+        cwes = cwe_fetcher.fetch(cwe_ids)
+        storage.save_cwe(cwes)
+        print("CWE models successfully saved to Parquet.")
+
+        loaded_cwes = storage.load_cwe()
+        print(f"Total loaded CWEs from Parquet: {len(loaded_cwes)}")
+        for idx, item in enumerate(loaded_cwes):
+            print(f"  [{idx + 1}] ID: {item.cwe_id} | Name: {item.name[:50]}...")
+    except Exception as e:
+        print(f"Error testing CWE/CPE: {e}", file=sys.stderr)
+
+
+def test_ghsa():
+    print("\n========================================")
+    print("Testing GitHub Security Advisory Fetcher & Storage")
+    print("========================================")
+    try:
+        fetcher = GitHubAdvisoryFetcher()
+        results = fetcher.fetch(limit=10)
+        storage.save_ghsa(results)
+        print("GHSA models successfully saved to Parquet.")
+
+        loaded = storage.load_ghsa()
+        print(f"Total loaded GHSAs from Parquet: {len(loaded)}")
+        for idx, item in enumerate(loaded[:3]):
+            print(
+                f"  [{idx + 1}] ID: {item.ghsa_id} | Package: {item.affected_package} | Severity: {item.severity}"
+            )
+            print(f"      Summary: {item.summary[:80]}...")
+    except Exception as e:
+        print(f"Error testing GHSA: {e}", file=sys.stderr)
+
+
+def test_rss():
+    print("\n========================================")
+    print("Testing RSS Fetcher & Storage")
+    print("========================================")
+    try:
+        sources = storage.load_notion_sources()
+        if not sources:
+            print("No sources found in storage. Using dummy RSS sources for test.")
+            sources = [
+                NotionSourceModel(
+                    source_id="dummy_rss_1",
+                    name="Microsoft Security Blog",
+                    url="https://www.microsoft.com/en-us/security/blog/feed/",
+                    type="rss",
+                    status="active",
+                    score=90,
+                    created_at=datetime.now(timezone.utc),
+                    updated_at=datetime.now(timezone.utc),
+                )
+            ]
+
+        fetcher = RSSFetcher()
+        articles, news = fetcher.fetch(sources)
+
+        if articles:
+            storage.save_articles(articles)
+            print(f"Successfully saved {len(articles)} articles to Parquet.")
+
+        if news:
+            storage.save_news(news)
+            print(f"Successfully saved {len(news)} news to Parquet.")
+
+        loaded_articles = storage.load_articles()
+        loaded_news = storage.load_news()
+        print(
+            f"Loaded: {len(loaded_articles)} Articles, {len(loaded_news)} News from Parquet."
+        )
+
+        if loaded_articles:
+            print("\nFirst 3 Articles:")
+            for idx, item in enumerate(loaded_articles[:3]):
+                print(f"  [{idx + 1}] Title: {item.title} | Source: {item.source_name}")
+
+        if loaded_news:
+            print("\nFirst 3 News:")
+            for idx, item in enumerate(loaded_news[:3]):
+                print(f"  [{idx + 1}] Title: {item.title} | Source: {item.source}")
+    except Exception as e:
+        print(f"Error testing RSS: {e}", file=sys.stderr)
+
+
 def main():
     print("Starting Security-for-AI-Monitor Data Acquisition & Storage Test Suite")
 
@@ -244,6 +404,16 @@ def main():
     test_github()
     time.sleep(3)
     test_notion()
+
+    # New fetchers tests
+    time.sleep(3)
+    test_mitre_atlas()
+    time.sleep(3)
+    test_cwe_and_cpe()
+    time.sleep(3)
+    test_ghsa()
+    time.sleep(3)
+    test_rss()
 
     print("\nTest Suite Completed.")
 

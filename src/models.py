@@ -146,3 +146,116 @@ class AIProductModel(BaseModel):
     @classmethod
     def validate_lists(cls, v: Any) -> List[str]:
         return parse_list_field(v)
+
+
+class CWEModel(BaseModel):
+    cwe_id: str
+    name: str
+    description: str
+    abstraction: str
+    status: str
+
+
+class CPEModel(BaseModel):
+    cve_id: str
+    cpe_name: str
+    vulnerable: bool
+    vendor: str
+    product: str
+    version_start: Optional[str] = None
+    version_end: Optional[str] = None
+    version_start_including: Optional[str] = None
+    version_end_including: Optional[str] = None
+
+
+class ATLASTacticModel(BaseModel):
+    tactic_id: str
+    name: str
+    description: str
+
+
+class ATLASTechniqueModel(BaseModel):
+    technique_id: str
+    tactic_id: str
+    name: str
+    description: str
+    mitigations: List[str] = Field(default_factory=list)
+    examples: List[str] = Field(default_factory=list)
+
+    @field_validator("mitigations", "examples", mode="before")
+    @classmethod
+    def validate_lists(cls, v: Any) -> List[str]:
+        return parse_list_field(v)
+
+
+class ATLASCaseStudyModel(BaseModel):
+    case_id: str
+    title: str
+    summary: str
+    related_techniques: List[str] = Field(default_factory=list)
+    url: str
+
+    @field_validator("related_techniques", mode="before")
+    @classmethod
+    def validate_lists(cls, v: Any) -> List[str]:
+        return parse_list_field(v)
+
+
+class GHSAModel(BaseModel):
+    advisory_id: str
+    ghsa_id: str
+    cve_id: Optional[str] = None
+    summary: str
+    severity: str
+    affected_package: str
+    patched_versions: Optional[str] = None
+    published_at: datetime
+    updated_at: datetime
+    url: str
+
+
+class ArticleModel(BaseModel):
+    article_id: str
+    title: str
+    url: str
+    source_name: str
+    source_type: str
+    published_at: datetime
+    fetched_at: datetime
+    summary: Optional[str] = None
+    category: Optional[str] = None
+    owasp_mapping: List[str] = Field(default_factory=list)
+    mitre_mapping: List[str] = Field(default_factory=list)
+    nist_mapping: List[str] = Field(default_factory=list)
+    importance_score: Optional[float] = None
+
+    @field_validator("owasp_mapping", "mitre_mapping", "nist_mapping", mode="before")
+    @classmethod
+    def validate_lists(cls, v: Any) -> List[str]:
+        return parse_list_field(v)
+
+
+class NewsModel(BaseModel):
+    news_id: str
+    title: str
+    url: str
+    source: str
+    published_at: datetime
+    summary: Optional[str] = None
+    mentioned_cve: List[str] = Field(default_factory=list)
+    mentioned_products: List[str] = Field(default_factory=list)
+    mentioned_threat_actors: List[str] = Field(
+        default_factory=list, alias="mentioned_threat_actots"
+    )
+    category: Optional[str] = None
+    importance_score: Optional[float] = None
+
+    @field_validator(
+        "mentioned_cve", "mentioned_products", "mentioned_threat_actors", mode="before"
+    )
+    @classmethod
+    def validate_lists(cls, v: Any) -> List[str]:
+        return parse_list_field(v)
+
+    class Config:
+        populate_by_name = True
