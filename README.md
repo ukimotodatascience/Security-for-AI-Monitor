@@ -76,8 +76,8 @@ graph TD
 ```
 
 ### 依存関係解決の流れ（パイプライン後半の処理）
-* **EPSSスコアの取得**: NVD CVE および GitHub Advisories (GHSA) で収集されたすべての CVE ID リストに基づき、FIRST EPSS API からバッチで悪用確率スコアを取得して `epss_scores` に保存します。
-* **CWE詳細情報の取得**: 収集された CVE データに含まれる CWE ID から、新規の ID のみを選択し、MITRE CWE API から脆弱性タイプの定義や対策詳細を取得して `cwes` に保存します。
+* **EPSSスコアの取得**: NVD CVE、GitHub Advisories (GHSA)、および CISA KEV で収集されたすべての CVE ID リストに基づき、FIRST EPSS API からバッチで悪用確率スコアを取得して `epss.parquet` に保存します。
+* **CWE詳細情報の取得**: 収集された CVE データに含まれる CWE ID から、新規の ID のみを選択し、MITRE CWE API から脆弱性タイプの定義や対策詳細を取得して `cwes.parquet` に保存します。
 
 ---
 
