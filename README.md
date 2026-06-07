@@ -175,7 +175,7 @@ FIRST APIから取得した悪用可能性予測スコア。
 CISAカタログから取得した「既知の悪用された脆弱性」の情報。
 * `cve_id` (str): 対象の CVE ID
 * `product` (str): 影響を受ける製品名
-* `vulnerability_name` (str): 脆弱性の一般名称
+* `vulnerablity_name` (str): 脆弱性の一般名称（Pydanticモデル定義およびParquetファイル上は、実名である `vulnerablity_name` のスペルで保存されます）
 * `added_date` (date): カタログ追加日
 * `due_date` (date): 対策期限
 * `known_ransomware_campaign_use` (str): ランサムウェアキャンペーンでの悪用有無
