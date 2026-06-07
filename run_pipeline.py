@@ -258,11 +258,16 @@ def run_pipeline():
         all_cves = []
         all_cpes = []
 
+        nvd_stage_failed = False
+        keywords_attempted = 0
+        keywords_succeeded = 0
+
         # Determine NVD query delay based on API key availability (6.0 seconds for no-key, 0.6 seconds for key)
         nvd_delay = 0.6 if Config.NVD_API_KEY else 6.0
 
         # A. Fetch CVEs by keyword (limit 50 per keyword to avoid API overloading)
         for kw in active_keywords:
+            keywords_attempted += 1
             logger.info(f"Querying NVD CVEs for keyword: '{kw}'")
             try:
                 cves = nvd_fetcher.fetch(keyword=kw, limit=50)
@@ -271,6 +276,7 @@ def run_pipeline():
                     nvd_fetcher.last_raw_vulnerabilities
                 )
                 all_cpes.extend(cpes)
+                keywords_succeeded += 1
             except Exception as kw_e:
                 logger.error(f"Error querying NVD for keyword '{kw}': {kw_e}")
 
@@ -290,6 +296,14 @@ def run_pipeline():
             time.sleep(nvd_delay)
         except Exception as latest_e:
             logger.error(f"Error querying latest NVD CVEs: {latest_e}")
+            nvd_stage_failed = True
+
+        # If active keywords were configured but all keyword requests failed, mark stage as failed
+        if keywords_attempted > 0 and keywords_succeeded == 0:
+            nvd_stage_failed = True
+
+        if nvd_stage_failed:
+            failed_stages.append("nvd_cve")
 
         # Deduplicate & Save CVEs
         if all_cves:
@@ -308,7 +322,8 @@ def run_pipeline():
         )
     except Exception as e:
         logger.error(f"General error during NVD CVE/CPE ingestion: {e}")
-        failed_stages.append("nvd_cve")
+        if "nvd_cve" not in failed_stages:
+            failed_stages.append("nvd_cve")
 
     # 5. arXiv (Keyword based)
     logger.info("--- [arXiv Ingestion] ---")
