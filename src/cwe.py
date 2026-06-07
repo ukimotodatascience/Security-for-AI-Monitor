@@ -63,7 +63,7 @@ class CWEFetcher(BaseFetcher):
                 name=item.get("Name", ""),
                 description=item.get("Description", ""),
                 abstraction=item.get("Abstraction", ""),
-                status=item.get("Status", "")
+                status=item.get("Status", ""),
             )
             results.append(model)
 

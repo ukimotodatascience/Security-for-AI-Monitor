@@ -1,6 +1,5 @@
-import httpx
 import yaml
-from typing import Any, Dict, List, Tuple
+from typing import Dict, List, Tuple
 from src.base_fetcher import BaseFetcher
 from src.models import ATLASTacticModel, ATLASTechniqueModel, ATLASCaseStudyModel
 
@@ -10,7 +9,11 @@ class ATLASFetcher(BaseFetcher):
         super().__init__("ATLASFetcher")
         self.url = "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/dist/ATLAS.yaml"
 
-    def fetch(self, **kwargs) -> Tuple[List[ATLASTacticModel], List[ATLASTechniqueModel], List[ATLASCaseStudyModel]]:
+    def fetch(
+        self, **kwargs
+    ) -> Tuple[
+        List[ATLASTacticModel], List[ATLASTechniqueModel], List[ATLASCaseStudyModel]
+    ]:
         """Fetch ATLAS.yaml and parse tactics, techniques, and case studies.
 
         Returns:
@@ -53,7 +56,7 @@ class ATLASFetcher(BaseFetcher):
             cs_id = cs.get("id", "")
             cs_name = cs.get("name", "")
             summary = cs.get("summary", "")
-            
+
             # Extract related techniques from procedure list
             related_techs = []
             for p in cs.get("procedure", []):
@@ -64,7 +67,7 @@ class ATLASFetcher(BaseFetcher):
                         tech_to_examples[t_id] = []
                     if cs_name not in tech_to_examples[t_id]:
                         tech_to_examples[t_id].append(cs_name)
-            
+
             # Deduplicate related techniques
             related_techs = list(set(related_techs))
             url = f"https://atlas.mitre.org/studies/{cs_id}"
@@ -74,7 +77,7 @@ class ATLASFetcher(BaseFetcher):
                 title=cs_name,
                 summary=summary,
                 related_techniques=related_techs,
-                url=url
+                url=url,
             )
             parsed_case_studies.append(case_model)
 
@@ -84,11 +87,9 @@ class ATLASFetcher(BaseFetcher):
             t_id = tac.get("id", "")
             name = tac.get("name", "")
             desc = tac.get("description", "")
-            parsed_tactics.append(ATLASTacticModel(
-                tactic_id=t_id,
-                name=name,
-                description=desc
-            ))
+            parsed_tactics.append(
+                ATLASTacticModel(tactic_id=t_id, name=name, description=desc)
+            )
 
         # 4. Parse Techniques
         parsed_techniques: List[ATLASTechniqueModel] = []
@@ -96,7 +97,7 @@ class ATLASFetcher(BaseFetcher):
             tech_id = tech.get("id", "")
             name = tech.get("name", "")
             desc = tech.get("description", "")
-            
+
             # Get first tactic ID
             t_ids = tech.get("tactics", [])
             tactic_id = t_ids[0] if t_ids else ""
@@ -104,14 +105,16 @@ class ATLASFetcher(BaseFetcher):
             mitigations = tech_to_mitigations.get(tech_id, [])
             examples = tech_to_examples.get(tech_id, [])
 
-            parsed_techniques.append(ATLASTechniqueModel(
-                technique_id=tech_id,
-                tactic_id=tactic_id,
-                name=name,
-                description=desc,
-                mitigations=mitigations,
-                examples=examples
-            ))
+            parsed_techniques.append(
+                ATLASTechniqueModel(
+                    technique_id=tech_id,
+                    tactic_id=tactic_id,
+                    name=name,
+                    description=desc,
+                    mitigations=mitigations,
+                    examples=examples,
+                )
+            )
 
         self.logger.info(
             f"Successfully parsed {len(parsed_tactics)} Tactics, "

@@ -1,5 +1,4 @@
-from datetime import datetime
-from typing import Any, List, Optional
+from typing import List, Optional
 from src.base_fetcher import BaseFetcher
 from src.models import GHSAModel, AIProductModel
 
@@ -12,7 +11,12 @@ class GitHubAdvisoryFetcher(BaseFetcher):
         self.headers["User-Agent"] = "Security-for-AI-Monitor/1.0"
         self.headers["Accept"] = "application/vnd.github+json"
 
-    def fetch(self, limit: int = 50, ai_products: Optional[List[AIProductModel]] = None, **kwargs) -> List[GHSAModel]:
+    def fetch(
+        self,
+        limit: int = 50,
+        ai_products: Optional[List[AIProductModel]] = None,
+        **kwargs,
+    ) -> List[GHSAModel]:
         """Fetch latest security advisories from GitHub and filter them for AI products.
 
         Args:
@@ -23,13 +27,11 @@ class GitHubAdvisoryFetcher(BaseFetcher):
         Returns:
             List of GHSAModel objects matching AI-related criteria.
         """
-        params = {
-            "per_page": min(limit, 100),
-            "direction": "desc",
-            "sort": "published"
-        }
+        params = {"per_page": min(limit, 100), "direction": "desc", "sort": "published"}
 
-        self.logger.info(f"Fetching latest {params['per_page']} advisories from GitHub API...")
+        self.logger.info(
+            f"Fetching latest {params['per_page']} advisories from GitHub API..."
+        )
         try:
             with self._get_client() as client:
                 response = client.get(self.url, params=params)
@@ -39,7 +41,9 @@ class GitHubAdvisoryFetcher(BaseFetcher):
             self.logger.error(f"Failed to fetch GitHub advisories: {e}")
             return []
 
-        self.logger.info(f"Fetched {len(advisories)} raw advisories. Filtering for AI packages...")
+        self.logger.info(
+            f"Fetched {len(advisories)} raw advisories. Filtering for AI packages..."
+        )
 
         # Build set of lower-case product names and aliases for filtering
         ai_names = set()
@@ -52,10 +56,30 @@ class GitHubAdvisoryFetcher(BaseFetcher):
         else:
             # Fallback list of common AI/ML packages if no products list provided
             ai_names = {
-                "langchain", "llama-index", "llamaindex", "ollama", "tensorflow", "pytorch",
-                "transformers", "huggingface", "keras", "scikit-learn", "numpy", "pandas",
-                "mlflow", "ray", "boto3", "langchain-core", "langchain-community", "gradio",
-                "streamlit", "dspy", "autogen", "crewai", "langgraph", "fastapi"
+                "langchain",
+                "llama-index",
+                "llamaindex",
+                "ollama",
+                "tensorflow",
+                "pytorch",
+                "transformers",
+                "huggingface",
+                "keras",
+                "scikit-learn",
+                "numpy",
+                "pandas",
+                "mlflow",
+                "ray",
+                "boto3",
+                "langchain-core",
+                "langchain-community",
+                "gradio",
+                "streamlit",
+                "dspy",
+                "autogen",
+                "crewai",
+                "langgraph",
+                "fastapi",
             }
 
         results = []
@@ -79,9 +103,11 @@ class GitHubAdvisoryFetcher(BaseFetcher):
                 if pkg_name:
                     pkg_names.append(pkg_name)
                     # Check if the package is in our AI products list
-                    if pkg_name.lower() in ai_names or any(name in pkg_name.lower() for name in ai_names):
+                    if pkg_name.lower() in ai_names or any(
+                        name in pkg_name.lower() for name in ai_names
+                    ):
                         is_ai_related = True
-                    
+
                     p_version = vuln.get("patched_versions")
                     if p_version:
                         patched_versions.append(p_version)
@@ -89,7 +115,13 @@ class GitHubAdvisoryFetcher(BaseFetcher):
             # Broaden filter check: also scan summary/description for keywords if packages aren't explicitly AI but text mentions AI keywords
             if not is_ai_related:
                 combined_text = f"{summary} {description}".lower()
-                ai_keywords = {"prompt injection", "large language model", "llm agent", "neural network", "machine learning"}
+                ai_keywords = {
+                    "prompt injection",
+                    "large language model",
+                    "llm agent",
+                    "neural network",
+                    "machine learning",
+                }
                 if any(kw in combined_text for kw in ai_keywords):
                     # If text matches AI security keywords, we consider it related
                     is_ai_related = True
@@ -99,7 +131,9 @@ class GitHubAdvisoryFetcher(BaseFetcher):
 
             # Format fields
             affected_package = ",".join(pkg_names) if pkg_names else "unknown"
-            patched_versions_str = ",".join(patched_versions) if patched_versions else None
+            patched_versions_str = (
+                ",".join(patched_versions) if patched_versions else None
+            )
 
             # Parse datetime fields
             pub_at = adv.get("published_at")
@@ -116,7 +150,7 @@ class GitHubAdvisoryFetcher(BaseFetcher):
                 patched_versions=patched_versions_str,
                 published_at=pub_at,
                 updated_at=up_at,
-                url=adv.get("html_url", "")
+                url=adv.get("html_url", ""),
             )
             results.append(model)
 
