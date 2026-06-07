@@ -23,6 +23,7 @@ from src.mitre_atlas import ATLASFetcher  # noqa: E402
 from src.cwe import CWEFetcher  # noqa: E402
 from src.github_advisory import GitHubAdvisoryFetcher  # noqa: E402
 from src.rss_source import RSSFetcher  # noqa: E402
+from src.nist import NISTPlaybookFetcher  # noqa: E402
 from src.models import NotionSourceModel, AIKeywordModel, AIProductModel  # noqa: E402
 
 # Configure logging
@@ -147,6 +148,7 @@ def run_pipeline():
         "mitre_atlas_tactics": 0,
         "mitre_atlas_techniques": 0,
         "mitre_atlas_case_studies": 0,
+        "nist_playbook": 0,
         "nvd_cves": 0,
         "cpes": 0,
         "arxiv_papers": 0,
@@ -250,6 +252,19 @@ def run_pipeline():
     except Exception as e:
         logger.error(f"Error fetching MITRE ATLAS data: {e}")
         failed_stages.append("mitre_atlas")
+
+    # 3.5 NIST AI RMF Playbook (Bulk Ingestion)
+    logger.info("--- [NIST AI RMF Playbook Ingestion] ---")
+    try:
+        nist_fetcher = NISTPlaybookFetcher()
+        nist_data = nist_fetcher.fetch()
+        if nist_data:
+            storage.save_nist(nist_data)
+            stats["nist_playbook"] = len(nist_data)
+            logger.info(f"Fetched and stored {len(nist_data)} NIST Playbook controls.")
+    except Exception as e:
+        logger.error(f"Error fetching NIST Playbook data: {e}")
+        failed_stages.append("nist_playbook")
 
     # 4. NVD CVE & CPE (Keyword based + Latest)
     logger.info("--- [NVD CVE & CPE Ingestion] ---")
@@ -519,6 +534,7 @@ def run_pipeline():
     logger.info(f"MITRE ATLAS Tactics:           {stats['mitre_atlas_tactics']}")
     logger.info(f"MITRE ATLAS Techniques:        {stats['mitre_atlas_techniques']}")
     logger.info(f"MITRE ATLAS Case Studies:      {stats['mitre_atlas_case_studies']}")
+    logger.info(f"NIST Playbook Controls:        {stats['nist_playbook']}")
     logger.info(f"NVD CVEs Fetched:              {stats['nvd_cves']}")
     logger.info(f"CPEs Extracted:                {stats['cpes']}")
     logger.info(f"arXiv Papers Fetched:          {stats['arxiv_papers']}")

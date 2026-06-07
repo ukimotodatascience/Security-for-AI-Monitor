@@ -21,6 +21,7 @@ from src.models import (
     GHSAModel,
     ArticleModel,
     NewsModel,
+    NISTModel,
 )
 
 
@@ -233,3 +234,10 @@ class FileStorage:
 
     def load_news(self) -> List[NewsModel]:
         return self._load_models(NewsModel, "rss", "news")
+
+    # NIST AI RMF
+    def save_nist(self, nist_data: List[NISTModel]) -> None:
+        self._save_models(nist_data, "control_id", "nist", "nist")
+
+    def load_nist(self) -> List[NISTModel]:
+        return self._load_models(NISTModel, "nist", "nist")
