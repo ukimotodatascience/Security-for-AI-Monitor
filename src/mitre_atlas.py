@@ -7,14 +7,17 @@ from src.models import ATLASTacticModel, ATLASTechniqueModel, ATLASCaseStudyMode
 class ATLASFetcher(BaseFetcher):
     def __init__(self):
         super().__init__("ATLASFetcher")
-        self.url = "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/dist/ATLAS.yaml"
+        self.latest_meta_url = "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/dist/v6/ATLAS-latest.yaml"
+        self.base_v6_url = (
+            "https://raw.githubusercontent.com/mitre-atlas/atlas-data/main/dist/v6/"
+        )
 
     def fetch(
         self, **kwargs
     ) -> Tuple[
         List[ATLASTacticModel], List[ATLASTechniqueModel], List[ATLASCaseStudyModel]
     ]:
-        """Fetch ATLAS.yaml and parse tactics, techniques, and case studies.
+        """Fetch latest ATLAS v6 data, parse tactics, techniques, and case studies.
 
         Returns:
             Tuple containing:
@@ -22,45 +25,55 @@ class ATLASFetcher(BaseFetcher):
             - List[ATLASTechniqueModel]
             - List[ATLASCaseStudyModel]
         """
-        self.logger.info(f"Fetching MITRE ATLAS data from {self.url}...")
+        self.logger.info(
+            f"Resolving latest ATLAS v6 filename from {self.latest_meta_url}..."
+        )
         with self._get_client() as client:
-            response = client.get(self.url)
+            res = client.get(self.latest_meta_url)
+            res.raise_for_status()
+            latest_filename = res.text.strip()
+
+            yaml_url = f"{self.base_v6_url}{latest_filename}"
+            self.logger.info(f"Fetching MITRE ATLAS v6 data from {yaml_url}...")
+            response = client.get(yaml_url)
             response.raise_for_status()
             yaml_content = response.text
 
-        self.logger.info("Parsing ATLAS YAML data...")
+        self.logger.info("Parsing ATLAS v6 YAML data...")
         doc = yaml.safe_load(yaml_content)
 
-        matrix = doc.get("matrices", [{}])[0]
-        raw_tactics = matrix.get("tactics", [])
-        raw_techniques = matrix.get("techniques", [])
-        raw_mitigations = matrix.get("mitigations", [])
-        raw_case_studies = doc.get("case-studies", [])
+        raw_tactics = doc.get("tactics", {})
+        raw_techniques = doc.get("techniques", {})
+        raw_mitigations = doc.get("mitigations", {})
+        raw_case_studies = doc.get("case-studies", {})
+        relationships = doc.get("relationships", {})
 
-        # 1. Map technique ID -> mitigations (derived from mitigations list)
+        # 1. Map technique ID -> mitigations (derived from mitigations relationships)
         tech_to_mitigations: Dict[str, List[str]] = {}
-        for mit in raw_mitigations:
+        for m_id, mit in raw_mitigations.items():
             mit_name = mit.get("name", "")
-            for t_ref in mit.get("techniques", []):
-                t_id = t_ref.get("id")
+            rel = relationships.get(m_id, {})
+            for mit_rel in rel.get("mitigates", []):
+                t_id = mit_rel.get("target")
                 if t_id:
                     if t_id not in tech_to_mitigations:
                         tech_to_mitigations[t_id] = []
-                    tech_to_mitigations[t_id].append(mit_name)
+                    if mit_name not in tech_to_mitigations[t_id]:
+                        tech_to_mitigations[t_id].append(mit_name)
 
-        # 2. Map technique ID -> case study names (derived from case studies)
+        # 2. Map technique ID -> case study names (derived from case studies relationships)
         tech_to_examples: Dict[str, List[str]] = {}
         parsed_case_studies: List[ATLASCaseStudyModel] = []
 
-        for cs in raw_case_studies:
-            cs_id = cs.get("id", "")
+        for cs_id, cs in raw_case_studies.items():
             cs_name = cs.get("name", "")
-            summary = cs.get("summary", "")
+            summary = cs.get("summary") or cs.get("description", "")
 
-            # Extract related techniques from procedure list
+            # Extract related techniques from employs relationship
             related_techs = []
-            for p in cs.get("procedure", []):
-                t_id = p.get("technique")
+            rel = relationships.get(cs_id, {})
+            for emp_rel in rel.get("employs", []):
+                t_id = emp_rel.get("target")
                 if t_id:
                     related_techs.append(t_id)
                     if t_id not in tech_to_examples:
@@ -68,7 +81,6 @@ class ATLASFetcher(BaseFetcher):
                     if cs_name not in tech_to_examples[t_id]:
                         tech_to_examples[t_id].append(cs_name)
 
-            # Deduplicate related techniques
             related_techs = list(set(related_techs))
             url = f"https://atlas.mitre.org/studies/{cs_id}"
 
@@ -83,8 +95,7 @@ class ATLASFetcher(BaseFetcher):
 
         # 3. Parse Tactics
         parsed_tactics: List[ATLASTacticModel] = []
-        for tac in raw_tactics:
-            t_id = tac.get("id", "")
+        for t_id, tac in raw_tactics.items():
             name = tac.get("name", "")
             desc = tac.get("description", "")
             parsed_tactics.append(
@@ -93,14 +104,16 @@ class ATLASFetcher(BaseFetcher):
 
         # 4. Parse Techniques
         parsed_techniques: List[ATLASTechniqueModel] = []
-        for tech in raw_techniques:
-            tech_id = tech.get("id", "")
+        for tech_id, tech in raw_techniques.items():
             name = tech.get("name", "")
             desc = tech.get("description", "")
 
-            # Get first tactic ID
-            t_ids = tech.get("tactics", [])
-            tactic_id = t_ids[0] if t_ids else ""
+            # Get tactic ID from achieves relationship
+            rel = relationships.get(tech_id, {})
+            tactic_id = ""
+            ach_rels = rel.get("achieves", [])
+            if ach_rels:
+                tactic_id = ach_rels[0].get("target", "")
 
             mitigations = tech_to_mitigations.get(tech_id, [])
             examples = tech_to_examples.get(tech_id, [])
@@ -119,7 +132,7 @@ class ATLASFetcher(BaseFetcher):
         self.logger.info(
             f"Successfully parsed {len(parsed_tactics)} Tactics, "
             f"{len(parsed_techniques)} Techniques, and "
-            f"{len(parsed_case_studies)} Case Studies."
+            f"{len(parsed_case_studies)} Case Studies from ATLAS v6."
         )
 
         return parsed_tactics, parsed_techniques, parsed_case_studies
