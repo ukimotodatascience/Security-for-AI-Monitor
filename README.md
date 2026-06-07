@@ -83,7 +83,7 @@ graph TD
 
 ## 2. 各データの収集方法とフィルタリング基準
 
-各データモデルの取得元、取得方法、およびフィルタリング条件のまとめです。詳細は各 Fetcher モジュール（[src/](file:///c:/Users/fuben/github/Security-for-AI-Monitor/src) 配下）で実装されています。
+各データモデルの取得元、取得方法、およびフィルタリング条件のまとめです。詳細は各 Fetcher モジュール（[src/](src/) 配下）で実装されています。
 
 | データ種別 | 取得元 (ソース) | 取得方法 (通信プロトコル/API) | フィルタリング・抽出ロジック |
 | :--- | :--- | :--- | :--- |
@@ -101,7 +101,7 @@ graph TD
 
 ## 3. データモデルとカラム定義
 
-本システムで収集・蓄積する各モデルのデータスキーマです。詳細な定義は [src/models.py](file:///c:/Users/fuben/github/Security-for-AI-Monitor/src/models.py) に記述されています。
+本システムで収集・蓄積する各モデルのデータスキーマです。詳細な定義は [src/models.py](src/models.py) に記述されています。
 
 <details>
 <summary>Notion 設定データ (入力)</summary>
