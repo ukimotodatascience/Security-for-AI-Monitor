@@ -28,7 +28,7 @@ graph TD
         RSS[RSS / Atom Feeds]
     end
 
-    subgraph 保存データ (data/raw/*.parquet)
+    subgraph 保存データ (data/raw/{folder}/*.parquet)
         cve[CVEModel]
         cpe[CPEModel]
         kev[KEVModel]
