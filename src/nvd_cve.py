@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import List, Optional
 from src.base_fetcher import BaseFetcher
 from src.config import Config
-from src.models import CVEModel
+from src.models import CVEModel, CPEModel
 
 
 class NVDCVEFetcher(BaseFetcher):
@@ -11,6 +11,7 @@ class NVDCVEFetcher(BaseFetcher):
         self.url = Config.NVD_API_URL
         if Config.NVD_API_KEY:
             self.headers["apiKey"] = Config.NVD_API_KEY
+        self.last_raw_vulnerabilities = []
 
     def fetch(
         self,
@@ -95,6 +96,7 @@ class NVDCVEFetcher(BaseFetcher):
             data = response.json()
 
         vulnerabilities = data.get("vulnerabilities", [])
+        self.last_raw_vulnerabilities = vulnerabilities
         self.logger.info(f"Fetched {len(vulnerabilities)} raw CVEs from NVD API.")
 
         results = []
@@ -194,3 +196,67 @@ class NVDCVEFetcher(BaseFetcher):
 
         self.logger.info(f"Successfully parsed {len(results)} CVE models.")
         return results
+
+    def extract_cpe_models(self, raw_vulnerabilities: List[dict]) -> List[CPEModel]:
+        """Extract CPE details from raw NVD API vulnerabilities list.
+
+        Args:
+            raw_vulnerabilities: The raw 'vulnerabilities' list returned by NVD API.
+
+        Returns:
+            List of CPEModel objects.
+        """
+        cpe_models = []
+        for vuln in raw_vulnerabilities:
+            cve_data = vuln.get("cve", {})
+            cve_id = cve_data.get("id")
+            if not cve_id:
+                continue
+
+            configurations = cve_data.get("configurations", [])
+
+            def extract_nodes(node_list: list):
+                for node in node_list:
+                    cpe_matches = node.get("cpeMatch", [])
+                    for match in cpe_matches:
+                        cpe_name = match.get("criteria")
+                        if not cpe_name:
+                            continue
+
+                        vulnerable = match.get("vulnerable", False)
+
+                        # Parse vendor and product from CPE URI
+                        # e.g., cpe:2.3:a:langchain:langchain:0.1.0:*:*:*:*:*:*:*
+                        parts = cpe_name.split(":")
+                        vendor = parts[3] if len(parts) > 3 else ""
+                        product = parts[4] if len(parts) > 4 else ""
+
+                        # Extract version bounds
+                        version_start = match.get("versionStartExcluding")
+                        version_end = match.get("versionEndExcluding")
+                        version_start_including = match.get("versionStartIncluding")
+                        version_end_including = match.get("versionEndIncluding")
+
+                        cpe_models.append(
+                            CPEModel(
+                                cve_id=cve_id,
+                                cpe_name=cpe_name,
+                                vulnerable=vulnerable,
+                                vendor=vendor,
+                                product=product,
+                                version_start=version_start,
+                                version_end=version_end,
+                                version_start_including=version_start_including,
+                                version_end_including=version_end_including,
+                            )
+                        )
+
+                    children = node.get("children", [])
+                    if children:
+                        extract_nodes(children)
+
+            for config in configurations:
+                nodes = config.get("nodes", [])
+                extract_nodes(nodes)
+
+        return cpe_models

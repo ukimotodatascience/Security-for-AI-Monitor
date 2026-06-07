@@ -1,7 +1,7 @@
 import os
 import uuid
 import pandas as pd
-from typing import List, TypeVar, Type
+from typing import List, TypeVar, Type, Union
 from pydantic import BaseModel
 from filelock import FileLock
 from src.models import (
@@ -13,7 +13,16 @@ from src.models import (
     NotionSourceModel,
     AIKeywordModel,
     AIProductModel,
+    CWEModel,
+    CPEModel,
+    ATLASTacticModel,
+    ATLASTechniqueModel,
+    ATLASCaseStudyModel,
+    GHSAModel,
+    ArticleModel,
+    NewsModel,
 )
+
 
 T = TypeVar("T", bound=BaseModel)
 
@@ -28,7 +37,11 @@ class FileStorage:
         self.base_dir = base_dir
 
     def _save_models(
-        self, items: List[T], primary_key: str, folder: str, filename: str
+        self,
+        items: List[T],
+        primary_key: Union[str, List[str]],
+        folder: str,
+        filename: str,
     ) -> None:
         """Saves a list of Pydantic models to a Parquet file, executing an Upsert
 
@@ -60,7 +73,8 @@ class FileStorage:
                 combined_df = new_df
 
             # Remove duplicates based on the primary key, keeping the last (newest) record
-            combined_df.drop_duplicates(subset=[primary_key], keep="last", inplace=True)
+            subset = [primary_key] if isinstance(primary_key, str) else primary_key
+            combined_df.drop_duplicates(subset=subset, keep="last", inplace=True)
 
             # Write back to Parquet atomically using a unique temporary file
             temp_filename = f"{filename}.{uuid.uuid4().hex}.tmp"
@@ -163,3 +177,59 @@ class FileStorage:
 
     def load_notion_products(self) -> List[AIProductModel]:
         return self._load_models(AIProductModel, "notion", "products")
+
+    # CWE
+    def save_cwe(self, cwes: List[CWEModel]) -> None:
+        self._save_models(cwes, "cwe_id", "cwe", "cwes")
+
+    def load_cwe(self) -> List[CWEModel]:
+        return self._load_models(CWEModel, "cwe", "cwes")
+
+    # CPE
+    def save_cpe(self, cpes: List[CPEModel]) -> None:
+        self._save_models(cpes, ["cve_id", "cpe_name"], "cpe", "cpes")
+
+    def load_cpe(self) -> List[CPEModel]:
+        return self._load_models(CPEModel, "cpe", "cpes")
+
+    # MITRE ATLAS Tactics
+    def save_atlas_tactics(self, tactics: List[ATLASTacticModel]) -> None:
+        self._save_models(tactics, "tactic_id", "atlas", "tactics")
+
+    def load_atlas_tactics(self) -> List[ATLASTacticModel]:
+        return self._load_models(ATLASTacticModel, "atlas", "tactics")
+
+    # MITRE ATLAS Techniques
+    def save_atlas_techniques(self, techniques: List[ATLASTechniqueModel]) -> None:
+        self._save_models(techniques, "technique_id", "atlas", "techniques")
+
+    def load_atlas_techniques(self) -> List[ATLASTechniqueModel]:
+        return self._load_models(ATLASTechniqueModel, "atlas", "techniques")
+
+    # MITRE ATLAS Case Studies
+    def save_atlas_case_studies(self, case_studies: List[ATLASCaseStudyModel]) -> None:
+        self._save_models(case_studies, "case_id", "atlas", "case_studies")
+
+    def load_atlas_case_studies(self) -> List[ATLASCaseStudyModel]:
+        return self._load_models(ATLASCaseStudyModel, "atlas", "case_studies")
+
+    # GHSA
+    def save_ghsa(self, advisories: List[GHSAModel]) -> None:
+        self._save_models(advisories, "advisory_id", "ghsa", "advisories")
+
+    def load_ghsa(self) -> List[GHSAModel]:
+        return self._load_models(GHSAModel, "ghsa", "advisories")
+
+    # Articles
+    def save_articles(self, articles: List[ArticleModel]) -> None:
+        self._save_models(articles, "article_id", "rss", "articles")
+
+    def load_articles(self) -> List[ArticleModel]:
+        return self._load_models(ArticleModel, "rss", "articles")
+
+    # News
+    def save_news(self, news: List[NewsModel]) -> None:
+        self._save_models(news, "news_id", "rss", "news")
+
+    def load_news(self) -> List[NewsModel]:
+        return self._load_models(NewsModel, "rss", "news")
