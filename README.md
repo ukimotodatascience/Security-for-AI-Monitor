@@ -10,13 +10,13 @@ AIシステム特有のセキュリティ脅威、脆弱性、関連ツール、
 
 ```mermaid
 graph TD
-    subgraph Notion (設定入力)
+    subgraph Notion["Notion (設定入力)"]
         Keywords[監視キーワード]
         Products[監視製品]
         Sources[情報ソース]
     end
 
-    subgraph 外部データソース (API / RSS / GitHub)
+    subgraph ExternalSources["外部データソース (API / RSS / GitHub)"]
         NVD[NVD API]
         CISA[CISA KEV Feed]
         ATLAS[MITRE ATLAS GitHub]
@@ -28,7 +28,7 @@ graph TD
         RSS[RSS / Atom Feeds]
     end
 
-    subgraph 保存データ (data/raw/{folder}/*.parquet)
+    subgraph SavedData["保存データ (data/raw/{folder}/*.parquet)"]
         cve[CVEModel]
         cpe[CPEModel]
         kev[KEVModel]
@@ -43,6 +43,7 @@ graph TD
         art[ArticleModel]
         news[NewsModel]
     end
+
 
     %% データフローの紐付け
     Keywords -->|キーワード検索| NVD
