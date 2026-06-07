@@ -259,3 +259,28 @@ class NewsModel(BaseModel):
 
     class Config:
         populate_by_name = True
+
+
+class NISTModel(BaseModel):
+    control_id: str
+    function: str
+    category: str
+    subcategory: str
+    description: str
+    source_doc: str = "NIST AI RMF Playbook"
+
+    # Playbook-specific details
+    section_about: Optional[str] = None
+    section_actions: Optional[str] = None
+    section_doc: Optional[str] = None
+    section_ref: Optional[str] = None
+    ai_actors: List[str] = Field(default_factory=list, alias="AI Actors")
+    topics: List[str] = Field(default_factory=list, alias="Topic")
+
+    @field_validator("ai_actors", "topics", mode="before")
+    @classmethod
+    def validate_lists(cls, v: Any) -> List[str]:
+        return parse_list_field(v)
+
+    class Config:
+        populate_by_name = True
