@@ -20,6 +20,7 @@ from src.mitre_atlas import ATLASFetcher  # noqa: E402
 from src.cwe import CWEFetcher  # noqa: E402
 from src.github_advisory import GitHubAdvisoryFetcher  # noqa: E402
 from src.rss_source import RSSFetcher  # noqa: E402
+from src.nist import NISTPlaybookFetcher  # noqa: E402
 from src.models import NotionSourceModel  # noqa: E402
 from datetime import datetime, timezone  # noqa: E402
 
@@ -390,6 +391,34 @@ def test_rss():
         print(f"Error testing RSS: {e}", file=sys.stderr)
 
 
+def test_nist():
+    print("\n========================================")
+    print("Testing NIST Playbook Fetcher & Storage")
+    print("========================================")
+    try:
+        fetcher = NISTPlaybookFetcher()
+        # Fetch data
+        results = fetcher.fetch()
+        print(f"Total parsed NIST models: {len(results)}")
+
+        # Save to Parquet
+        storage.save_nist(results)
+        print("NIST models successfully saved to Parquet.")
+
+        # Load from Parquet
+        loaded = storage.load_nist()
+        print(f"Total loaded NIST models from Parquet: {len(loaded)}")
+
+        if loaded:
+            print("\nFirst 3 loaded NIST records from Parquet:")
+            for idx, item in enumerate(loaded[:3]):
+                print(
+                    f"[{idx + 1}] Control ID: {item.control_id} | Function: {item.function} | Category: {item.category[:50]}..."
+                )
+    except Exception as e:
+        print(f"Error testing NIST: {e}", file=sys.stderr)
+
+
 def main():
     print("Starting Security-for-AI-Monitor Data Acquisition & Storage Test Suite")
 
@@ -414,6 +443,8 @@ def main():
     test_ghsa()
     time.sleep(3)
     test_rss()
+    time.sleep(3)
+    test_nist()
 
     print("\nTest Suite Completed.")
 
