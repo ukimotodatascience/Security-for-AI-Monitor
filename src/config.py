@@ -33,6 +33,9 @@ class Config:
     # HTTP Client Settings
     HTTP_TIMEOUT = int(os.getenv("HTTP_TIMEOUT", "30"))
 
+    # Data Export Settings
+    MAX_JSON_SIZE_MB = float(os.getenv("MAX_JSON_SIZE_MB", "5.0"))
+
     @classmethod
     def validate_notion_config(cls):
         """Validate Notion config and raise error if missing."""
