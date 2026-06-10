@@ -25,6 +25,7 @@ from src.github_advisory import GitHubAdvisoryFetcher  # noqa: E402
 from src.rss_source import RSSFetcher  # noqa: E402
 from src.nist import NISTPlaybookFetcher  # noqa: E402
 from src.models import NotionSourceModel, AIKeywordModel, AIProductModel  # noqa: E402
+from src.exporter import export_data  # noqa: E402
 
 # Configure logging
 logging.basicConfig(
@@ -519,6 +520,21 @@ def run_pipeline():
     except Exception as e:
         logger.error(f"Error executing RSS crawl: {e}")
         failed_stages.append("rss")
+    # 11. Unified JSON Data Mart Export for Static Web UI (GitHub Pages)
+    logger.info("--- [Unified JSON Data Mart Export] ---")
+    try:
+        processed_dir = os.path.join(script_dir, "data", "processed")
+        exported_path = export_data(
+            base_raw_dir=base_raw_dir,
+            output_dir=processed_dir,
+            max_size_mb=Config.MAX_JSON_SIZE_MB,
+        )
+        logger.info(f"Successfully exported JSON data mart to {exported_path}")
+        stats["export_status"] = "SUCCESS"
+    except Exception as e:
+        logger.error(f"Error exporting JSON data mart: {e}")
+        failed_stages.append("export")
+        stats["export_status"] = f"FAILED ({e})"
 
     # --- Summary ---
     logger.info("==================================================")
@@ -544,6 +560,7 @@ def run_pipeline():
     logger.info(f"CWEs Resolved:                 {stats['cwes']}")
     logger.info(f"RSS Articles Parsed:           {stats['rss_articles']}")
     logger.info("RSS News Parsed:               {}".format(stats["rss_news"]))
+    logger.info(f"JSON Export Status:            {stats.get('export_status', 'N/A')}")
     logger.info("==================================================")
 
     if failed_stages:
