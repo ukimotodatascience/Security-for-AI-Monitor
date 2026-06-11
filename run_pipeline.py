@@ -199,15 +199,6 @@ def run_pipeline():
         if Config.NOTION_API_KEY:
             failed_stages.append("notion")
         sources, keywords, products = get_default_mock_data()
-
-        # Save mock configurations to storage
-        if sources:
-            storage.save_notion_sources(sources)
-        if keywords:
-            storage.save_notion_keywords(keywords)
-        if products:
-            storage.save_notion_products(products)
-
         stats["notion_sources"] = len(sources)
         stats["notion_keywords"] = len(keywords)
         stats["notion_products"] = len(products)
@@ -538,6 +529,8 @@ def run_pipeline():
             base_raw_dir=base_raw_dir,
             output_dir=processed_dir,
             max_size_mb=Config.MAX_JSON_SIZE_MB,
+            fallback_keywords=keywords if not notion_success else None,
+            fallback_products=products if not notion_success else None,
         )
         logger.info(f"Successfully exported JSON data mart to {exported_path}")
         stats["export_status"] = "SUCCESS"

@@ -45,6 +45,8 @@ def export_data(
     base_raw_dir: str = "data/raw",
     output_dir: str = "data/processed",
     max_size_mb: float = 5.0,
+    fallback_keywords=None,
+    fallback_products=None,
 ) -> str:
     """Loads raw Parquet data, integrates it, applies file size constraints,
 
@@ -69,6 +71,18 @@ def export_data(
     atlas_case_studies = storage.load_atlas_case_studies()
     keywords = storage.load_notion_keywords()
     products = storage.load_notion_products()
+
+    # Use fallback configurations if raw storage contains no active configuration
+    if not keywords and fallback_keywords:
+        logger.info(
+            "No persisted keywords found. Using fallback keywords for JSON export."
+        )
+        keywords = fallback_keywords
+    if not products and fallback_products:
+        logger.info(
+            "No persisted products found. Using fallback products for JSON export."
+        )
+        products = fallback_products
 
     # 2. Build lookup maps for faster integration
     epss_map = {e.cve_id: e.model_dump(mode="json") for e in epss_list}
