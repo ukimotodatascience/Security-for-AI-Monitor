@@ -47,7 +47,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOption, setFilterOption] = useState('all');
-  
+
   // Vulnerability specific filters
   const [cveSearch, setCveSearch] = useState('');
   const [cveSeverity, setCveSeverity] = useState('all');
@@ -272,29 +272,29 @@ export default function App() {
   const renderVulnerabilities = () => {
     // Filter logic
     const filteredCves = data.cves.filter(cve => {
-      const matchesSearch = cve.cve_id.toLowerCase().includes(cveSearch.toLowerCase()) || 
+      const matchesSearch = cve.cve_id.toLowerCase().includes(cveSearch.toLowerCase()) ||
         cve.description.toLowerCase().includes(cveSearch.toLowerCase()) ||
         cve.cpe_names.some(cpe => cpe.toLowerCase().includes(cveSearch.toLowerCase()));
-      
-      const matchesSeverity = cveSeverity === 'all' || 
+
+      const matchesSeverity = cveSeverity === 'all' ||
         (cve.cvss_base_label && cve.cvss_base_label.toLowerCase() === cveSeverity.toLowerCase());
-        
+
       const matchesKev = !cveKevOnly || cve.is_kev;
-      
+
       return matchesSearch && matchesSeverity && matchesKev;
     });
 
     return (
       <div className="fade-in">
         <div className="search-container">
-          <input 
-            type="text" 
-            placeholder="CVE ID, CPE製品名, 説明から検索..." 
+          <input
+            type="text"
+            placeholder="CVE ID, CPE製品名, 説明から検索..."
             className="search-input"
             value={cveSearch}
             onChange={(e) => setCveSearch(e.target.value)}
           />
-          <select 
+          <select
             className="filter-select"
             value={cveSeverity}
             onChange={(e) => setCveSeverity(e.target.value)}
@@ -306,8 +306,8 @@ export default function App() {
             <option value="low">LOW</option>
           </select>
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none', background: 'rgba(18, 22, 32, 0.8)', border: '1px solid var(--border)', borderRadius: '10px', padding: '12px 16px', fontSize: '0.95rem' }}>
-            <input 
-              type="checkbox" 
+            <input
+              type="checkbox"
               checked={cveKevOnly}
               onChange={(e) => setCveKevOnly(e.target.checked)}
               style={{ cursor: 'pointer' }}
@@ -341,7 +341,7 @@ export default function App() {
                   const isExpanded = !!expandedCves[cve.cve_id];
                   return (
                     <React.Fragment key={cve.cve_id}>
-                      <tr 
+                      <tr
                         onClick={() => toggleCveExpand(cve.cve_id)}
                         style={{ cursor: 'pointer' }}
                       >
@@ -356,7 +356,7 @@ export default function App() {
                         </td>
                         <td>
                           {cve.cvss_base_score ? (
-                            <span 
+                            <span
                               className={`badge ${
                                 cve.cvss_base_label === 'CRITICAL' ? 'badge-rose' :
                                 cve.cvss_base_label === 'HIGH' ? 'badge-rose' :
@@ -393,7 +393,7 @@ export default function App() {
                               <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                                 <Icons.Bug /> 脆弱性詳細情報
                               </h4>
-                              
+
                               <p style={{ color: 'var(--text-primary)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px', background: 'rgba(0,0,0,0.1)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
                                 {cve.description}
                               </p>
@@ -483,7 +483,7 @@ export default function App() {
 
   // 3. arXiv Tab Render
   const renderArxiv = () => {
-    const filteredPapers = data.arxiv.filter(paper => 
+    const filteredPapers = data.arxiv.filter(paper =>
       paper.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       paper.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
       paper.authors.some(author => author.toLowerCase().includes(searchQuery.toLowerCase()))
@@ -492,9 +492,9 @@ export default function App() {
     return (
       <div className="fade-in">
         <div className="search-container">
-          <input 
-            type="text" 
-            placeholder="論文タイトル、要約、著者から検索..." 
+          <input
+            type="text"
+            placeholder="論文タイトル、要約、著者から検索..."
             className="search-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -517,9 +517,9 @@ export default function App() {
                 </div>
                 <h3 className="card-title">{paper.title}</h3>
                 <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>著者: {paper.authors.join(', ')}</p>
-                
+
                 <p className="card-summary">{paper.summary}</p>
-                
+
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
                   {paper.categories.map((cat, i) => (
                     <span key={i} className="badge badge-cyan" style={{ fontSize: '0.7rem' }}>{cat}</span>
@@ -553,7 +553,7 @@ export default function App() {
 
   // 4. Blogs & News Tab Render
   const renderBlogsAndNews = () => {
-    const filteredArticles = data.rss_articles.filter(art => 
+    const filteredArticles = data.rss_articles.filter(art =>
       art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       (art.summary && art.summary.toLowerCase().includes(searchQuery.toLowerCase()))
     );
@@ -561,9 +561,9 @@ export default function App() {
     return (
       <div className="fade-in">
         <div className="search-container">
-          <input 
-            type="text" 
-            placeholder="記事タイトル、要約から検索..." 
+          <input
+            type="text"
+            placeholder="記事タイトル、要約から検索..."
             className="search-input"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -589,9 +589,9 @@ export default function App() {
                     {art.title} <Icons.ExternalLink />
                   </a>
                 </h3>
-                
+
                 {art.summary && <p className="card-summary">{art.summary}</p>}
-                
+
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
                   {art.owasp_mapping && art.owasp_mapping.map((map, i) => (
                     <span key={i} className="badge badge-amber" style={{ fontSize: '0.7rem' }}>{map}</span>
@@ -621,7 +621,7 @@ export default function App() {
     return (
       <div className="fade-in">
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
-          
+
           {/* MITRE ATLAS */}
           <div className="glass-panel" style={{ padding: '30px' }}>
             <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -693,14 +693,14 @@ export default function App() {
         </div>
 
         <ul className="nav-menu">
-          <li 
+          <li
             className={`nav-item ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => { setActiveTab('overview'); setSearchQuery(''); }}
           >
             <Icons.Overview />
             <span>OVERVIEW</span>
           </li>
-          <li 
+          <li
             className={`nav-item ${activeTab === 'vulnerabilities' ? 'active' : ''}`}
             onClick={() => { setActiveTab('vulnerabilities'); setSearchQuery(''); }}
           >
@@ -712,21 +712,21 @@ export default function App() {
               </span>
             )}
           </li>
-          <li 
+          <li
             className={`nav-item ${activeTab === 'arxiv' ? 'active' : ''}`}
             onClick={() => { setActiveTab('arxiv'); setSearchQuery(''); }}
           >
             <Icons.BookOpen />
             <span>RESEARCH PAPERS</span>
           </li>
-          <li 
+          <li
             className={`nav-item ${activeTab === 'rss' ? 'active' : ''}`}
             onClick={() => { setActiveTab('rss'); setSearchQuery(''); }}
           >
             <Icons.Globe />
             <span>BLOGS & NEWS</span>
           </li>
-          <li 
+          <li
             className={`nav-item ${activeTab === 'reference' ? 'active' : ''}`}
             onClick={() => { setActiveTab('reference'); setSearchQuery(''); }}
           >
@@ -760,7 +760,7 @@ export default function App() {
               {activeTab === 'reference' && 'NIST AI RMF Playbook コントロール および MITRE ATLAS 攻撃戦術のナレッジベース'}
             </p>
           </div>
-          
+
           <span className="badge badge-emerald" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ width: '6px', height: '6px', background: '#34d399', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 8px #34d399' }}></span>
             MONITORING ACTIVE
