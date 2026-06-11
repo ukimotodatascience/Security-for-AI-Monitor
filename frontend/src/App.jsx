@@ -84,7 +84,7 @@ export default function App() {
     return (
       <div style={{ display: 'flex', height: '100vh', width: '100vw', alignItems: 'center', justifyContent: 'center', background: '#0a0c10', color: '#f8fafc', flexDirection: 'column', gap: '20px' }}>
         <div style={{ width: '40px', height: '40px', border: '3px solid rgba(6, 182, 212, 0.1)', borderTopColor: '#06b6d4', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-        <p style={{ letterSpacing: '0.05em', fontSize: '0.9rem', color: '#94a3b8' }}>INITIALIZING MONITOR SYSTEM...</p>
+        <p style={{ letterSpacing: '0.05em', fontSize: '0.9rem', color: '#94a3b8' }}>モニターシステムを初期化中...</p>
         <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
       </div>
     );
@@ -94,9 +94,9 @@ export default function App() {
     return (
       <div style={{ display: 'flex', height: '100vh', width: '100vw', alignItems: 'center', justifyContent: 'center', background: '#0a0c10', color: '#f43f5e', flexDirection: 'column', gap: '20px', padding: '40px', textAlign: 'center' }}>
         <Icons.AlertTriangle />
-        <h2>Monitor System Initialization Failed</h2>
+        <h2>モニターシステムの初期化に失敗しました</h2>
         <p style={{ color: '#94a3b8', maxWidth: '500px', fontSize: '0.95rem' }}>{error}</p>
-        <p style={{ color: '#64748b', fontSize: '0.85rem' }}>Please run the data ingestion pipeline (<code>run_pipeline.py</code>) first to generate the necessary data files.</p>
+        <p style={{ color: '#64748b', fontSize: '0.85rem' }}>データ収集パイプライン（<code>run_pipeline.py</code>）を実行して、必要なデータファイルを生成してください。</p>
       </div>
     );
   }
@@ -144,11 +144,11 @@ export default function App() {
     data.cves.slice(0, 5).forEach(cve => {
       recentFeed.push({
         type: 'cve',
-        title: `${cve.cve_id}: ${(cve.cvss_base_score !== null && cve.cvss_base_score !== undefined) ? `CVSS ${cve.cvss_base_score}` : 'Score N/A'} (${cve.cvss_base_label || 'Unknown'})`,
+        title: `${cve.cve_id}: ${(cve.cvss_base_score !== null && cve.cvss_base_score !== undefined) ? `CVSS ${cve.cvss_base_score}` : 'スコア未設定'} (${cve.cvss_base_label || '不明'})`,
         desc: cve.description,
         date: cve.published_at,
         badge: cve.is_kev ? 'badge-rose' : 'badge-amber',
-        badgeText: cve.is_kev ? 'KEV VULNERABILITY' : 'CVE',
+        badgeText: cve.is_kev ? 'KEV 脆弱性' : 'CVE',
         url: `https://nvd.nist.gov/vuln/detail/${cve.cve_id}`
       });
     });
@@ -160,7 +160,7 @@ export default function App() {
         desc: paper.summary,
         date: paper.published_at,
         badge: 'badge-purple',
-        badgeText: 'RESEARCH PAPER',
+        badgeText: '研究論文',
         url: paper.abs_url
       });
     });
@@ -169,10 +169,10 @@ export default function App() {
       recentFeed.push({
         type: 'article',
         title: art.title,
-        desc: art.summary || 'Summary not available.',
+        desc: art.summary || '要約がありません。',
         date: art.published_at,
         badge: 'badge-blue',
-        badgeText: art.source_name || 'ARTICLE',
+        badgeText: art.source_name || '記事',
         url: art.url
       });
     });
@@ -183,19 +183,19 @@ export default function App() {
       <div className="fade-in">
         <div className="stat-grid">
           <div className="glass-panel stat-card">
-            <span className="stat-label">MONITORED CVEs</span>
+            <span className="stat-label">監視対象CVE数</span>
             <div className="stat-value">{totalCves}</div>
           </div>
           <div className="glass-panel stat-card">
-            <span className="stat-label">RESEARCH PAPERS</span>
+            <span className="stat-label">収集研究論文数</span>
             <div className="stat-value">{totalArxiv}</div>
           </div>
           <div className="glass-panel stat-card">
-            <span className="stat-label">RSS ARTICLES</span>
+            <span className="stat-label">収集RSS記事数</span>
             <div className="stat-value">{totalArticles}</div>
           </div>
           <div className="glass-panel stat-card">
-            <span className="stat-label">ACTIVE KEYWORDS</span>
+            <span className="stat-label">有効キーワード数</span>
             <div className="stat-value">{activeKeywords.length}</div>
           </div>
         </div>
@@ -205,7 +205,7 @@ export default function App() {
           <div className="glass-panel" style={{ padding: '30px' }}>
             <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Icons.Overview />
-              LATEST THREAT FEED (GLOBAL MONITOR)
+              最新の脅威フィード（グローバル監視）
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               {recentFeed.slice(0, 10).map((item, idx) => (
@@ -228,7 +228,7 @@ export default function App() {
           {/* Configuration Status */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
             <div className="glass-panel" style={{ padding: '24px' }}>
-              <h4 style={{ marginBottom: '16px', fontSize: '0.95rem', letterSpacing: '0.05em' }}>MONITORED AI PRODUCTS</h4>
+              <h4 style={{ marginBottom: '16px', fontSize: '0.95rem', letterSpacing: '0.05em' }}>監視対象AI製品</h4>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {activeProducts.map((p, idx) => (
                   <span key={idx} className="badge badge-cyan" style={{ fontSize: '0.8rem' }}>{p.product_name}</span>
@@ -237,7 +237,7 @@ export default function App() {
             </div>
 
             <div className="glass-panel" style={{ padding: '24px' }}>
-              <h4 style={{ marginBottom: '16px', fontSize: '0.95rem', letterSpacing: '0.05em' }}>MONITORED CVE KEYWORDS</h4>
+              <h4 style={{ marginBottom: '16px', fontSize: '0.95rem', letterSpacing: '0.05em' }}>監視キーワード</h4>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {activeKeywords.map((k, idx) => (
                   <span key={idx} className="badge badge-purple" style={{ fontSize: '0.8rem' }}>{k.keyword}</span>
@@ -249,7 +249,7 @@ export default function App() {
             <div className="glass-panel" style={{ padding: '24px' }}>
               <h4 style={{ marginBottom: '16px', fontSize: '0.95rem', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <Icons.Github />
-                GITHUB REPOS
+                GitHubリポジトリ
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {data.github_repos.slice(0, 5).map((repo, idx) => (
@@ -300,10 +300,10 @@ export default function App() {
             onChange={(e) => setCveSeverity(e.target.value)}
           >
             <option value="all">すべての深刻度</option>
-            <option value="critical">CRITICAL</option>
-            <option value="high">HIGH</option>
-            <option value="medium">MEDIUM</option>
-            <option value="low">LOW</option>
+            <option value="critical">CRITICAL (緊急)</option>
+            <option value="high">HIGH (高)</option>
+            <option value="medium">MEDIUM (中)</option>
+            <option value="low">LOW (低)</option>
           </select>
           <label style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', cursor: 'pointer', userSelect: 'none', background: 'rgba(18, 22, 32, 0.8)', border: '1px solid var(--border)', borderRadius: '10px', padding: '12px 16px', fontSize: '0.95rem' }}>
             <input
@@ -448,7 +448,7 @@ export default function App() {
                               {cve.advisories && cve.advisories.length > 0 && (
                                 <div style={{ background: 'rgba(59, 130, 246, 0.02)', border: '1px solid rgba(59, 130, 246, 0.15)', padding: '20px', borderRadius: '8px' }}>
                                   <h5 style={{ color: 'var(--accent-blue)', display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
-                                    <Icons.Shield /> GitHub Security Advisories (GHSA)
+                                    <Icons.Shield /> GitHub セキュリティアドバイザリ (GHSA)
                                   </h5>
                                   {cve.advisories.map((adv, idx) => (
                                     <div key={idx} style={{ borderBottom: idx < cve.advisories.length - 1 ? '1px solid var(--border)' : 'none', paddingBottom: idx < cve.advisories.length - 1 ? '12px' : 0, paddingTop: idx > 0 ? '12px' : 0 }}>
@@ -579,7 +579,7 @@ export default function App() {
             filteredArticles.map((art) => (
               <div key={art.article_id} className="glass-panel card">
                 <div className="card-header">
-                  <span className="badge badge-blue">{art.source_name || 'RSS Article'}</span>
+                  <span className="badge badge-blue">{art.source_name || 'RSS 記事'}</span>
                   <span className="sync-time" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Icons.Calendar /> {formatDateOnly(art.published_at)}
                   </span>
@@ -625,7 +625,7 @@ export default function App() {
           {/* MITRE ATLAS */}
           <div className="glass-panel" style={{ padding: '30px' }}>
             <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Icons.Shield /> MITRE ATLAS (AI Adversarial Tactics)
+              <Icons.Shield /> MITRE ATLAS (AIの攻撃戦術・手法)
             </h3>
             <div style={{ maxHeight: '600px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', paddingRight: '10px' }}>
               {data.atlas.tactics.map((tactic) => {
@@ -654,7 +654,7 @@ export default function App() {
           {/* NIST AI RMF Playbook */}
           <div className="glass-panel" style={{ padding: '30px' }}>
             <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <Icons.FileText /> NIST AI RMF Playbook Controls
+              <Icons.FileText /> NIST AI RMFプレイブック・コントロール
             </h3>
             <div style={{ maxHeight: '600px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '16px', paddingRight: '10px' }}>
               {data.nist_controls.slice(0, 15).map((ctrl) => (
@@ -669,7 +669,7 @@ export default function App() {
               ))}
               {data.nist_controls.length > 15 && (
                 <p style={{ color: 'var(--text-muted)', fontSize: '0.85rem', textAlign: 'center', marginTop: '10px' }}>
-                  (Showing first 15 of {data.nist_controls.length} NIST controls)
+                  (全 {data.nist_controls.length} 件の NIST コントロールのうち最初の 15 件を表示しています)
                 </p>
               )}
             </div>
@@ -688,7 +688,7 @@ export default function App() {
           <div className="brand-logo">S</div>
           <div>
             <div className="brand-title">AI MONITOR</div>
-            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', letterSpacing: '0.1em' }}>SECURITY FOR AI</div>
+            <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', letterSpacing: '0.1em' }}>AI向けセキュリティ</div>
           </div>
         </div>
 
@@ -698,14 +698,14 @@ export default function App() {
             onClick={() => { setActiveTab('overview'); setSearchQuery(''); }}
           >
             <Icons.Overview />
-            <span>OVERVIEW</span>
+            <span>概要</span>
           </li>
           <li
             className={`nav-item ${activeTab === 'vulnerabilities' ? 'active' : ''}`}
             onClick={() => { setActiveTab('vulnerabilities'); setSearchQuery(''); }}
           >
             <Icons.Bug />
-            <span>VULNERABILITIES</span>
+            <span>脆弱性情報</span>
             {data.cves.length > 0 && (
               <span className="badge badge-rose" style={{ marginLeft: 'auto', padding: '2px 6px', fontSize: '0.65rem' }}>
                 {data.cves.length}
@@ -717,27 +717,27 @@ export default function App() {
             onClick={() => { setActiveTab('arxiv'); setSearchQuery(''); }}
           >
             <Icons.BookOpen />
-            <span>RESEARCH PAPERS</span>
+            <span>学術論文</span>
           </li>
           <li
             className={`nav-item ${activeTab === 'rss' ? 'active' : ''}`}
             onClick={() => { setActiveTab('rss'); setSearchQuery(''); }}
           >
             <Icons.Globe />
-            <span>BLOGS & NEWS</span>
+            <span>ニュース・ブログ</span>
           </li>
           <li
             className={`nav-item ${activeTab === 'reference' ? 'active' : ''}`}
             onClick={() => { setActiveTab('reference'); setSearchQuery(''); }}
           >
             <Icons.Shield />
-            <span>FRAMEWORKS</span>
+            <span>フレームワーク</span>
           </li>
         </ul>
 
         <div className="sidebar-footer">
-          <div className="sync-time">SYSTEM STATUS: ACTIVE</div>
-          <div className="sync-time" style={{ marginTop: '4px' }}>LAST EXP: {formatDateTime(data.meta.generated_at)}</div>
+          <div className="sync-time">システム状態: 稼働中</div>
+          <div className="sync-time" style={{ marginTop: '4px' }}>最終エクスポート: {formatDateTime(data.meta.generated_at)}</div>
         </div>
       </div>
 
@@ -746,24 +746,24 @@ export default function App() {
         <div className="page-header">
           <div className="page-info">
             <h1 style={{ fontSize: '1.75rem', fontWeight: 700 }}>
-              {activeTab === 'overview' && 'SYSTEM OVERVIEW'}
-              {activeTab === 'vulnerabilities' && 'VULNERABILITY MONITOR'}
-              {activeTab === 'arxiv' && 'AI SECURITY RESEARCH'}
-              {activeTab === 'rss' && 'THREAT INTEL & NEWS'}
-              {activeTab === 'reference' && 'SECURITY FRAMEWORKS'}
+              {activeTab === 'overview' && 'システム概要'}
+              {activeTab === 'vulnerabilities' && '脆弱性モニター'}
+              {activeTab === 'arxiv' && 'AIセキュリティ研究論文'}
+              {activeTab === 'rss' && '脅威インテリジェンス・ニュース'}
+              {activeTab === 'reference' && 'セキュリティフレームワーク'}
             </h1>
             <p className="page-subtitle">
               {activeTab === 'overview' && 'AIシステムに関する脆弱性・脅威情報、学術論文、技術動向の統合ダッシュボード'}
               {activeTab === 'vulnerabilities' && 'NVD CVE、EPSSスコア、CISA KEV、アドバイザリに基づく脆弱性の相関監視'}
               {activeTab === 'arxiv' && 'arXiv から自動収集された最新のAIセキュリティ・脆弱性に関連する研究論文'}
               {activeTab === 'rss' && '主要なベンダーブログやセキュリティニュースメディアのRSSクローラーフィード'}
-              {activeTab === 'reference' && 'NIST AI RMF Playbook コントロール および MITRE ATLAS 攻撃戦術のナレッジベース'}
+              {activeTab === 'reference' && 'NIST AI RMFプレイブックのコントロールおよび MITRE ATLAS 攻撃戦術のナレッジベース'}
             </p>
           </div>
 
           <span className="badge badge-emerald" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{ width: '6px', height: '6px', background: '#34d399', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 8px #34d399' }}></span>
-            MONITORING ACTIVE
+            監視アクティブ
           </span>
         </div>
 
