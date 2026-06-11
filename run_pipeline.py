@@ -2,6 +2,7 @@ import os
 import sys
 import time
 import logging
+import shutil
 from datetime import datetime, timezone
 from dotenv import load_dotenv
 
@@ -531,6 +532,17 @@ def run_pipeline():
         )
         logger.info(f"Successfully exported JSON data mart to {exported_path}")
         stats["export_status"] = "SUCCESS"
+
+        # Copy to frontend public directory if it exists
+        frontend_data_dir = os.path.join(script_dir, "frontend", "public", "data")
+        if os.path.exists(os.path.join(script_dir, "frontend")):
+            os.makedirs(frontend_data_dir, exist_ok=True)
+            shutil.copy(
+                exported_path, os.path.join(frontend_data_dir, "dashboard_data.json")
+            )
+            logger.info(
+                "Successfully copied JSON data mart to frontend public data directory."
+            )
     except Exception as e:
         logger.error(f"Error exporting JSON data mart: {e}")
         failed_stages.append("export")
