@@ -144,7 +144,7 @@ export default function App() {
     data.cves.slice(0, 5).forEach(cve => {
       recentFeed.push({
         type: 'cve',
-        title: `${cve.cve_id}: ${cve.cvss_base_score ? `CVSS ${cve.cvss_base_score}` : 'Score N/A'} (${cve.cvss_base_label || 'Unknown'})`,
+        title: `${cve.cve_id}: ${(cve.cvss_base_score !== null && cve.cvss_base_score !== undefined) ? `CVSS ${cve.cvss_base_score}` : 'Score N/A'} (${cve.cvss_base_label || 'Unknown'})`,
         desc: cve.description,
         date: cve.published_at,
         badge: cve.is_kev ? 'badge-rose' : 'badge-amber',
@@ -355,7 +355,7 @@ export default function App() {
                           {formatDateOnly(cve.published_at)}
                         </td>
                         <td>
-                          {cve.cvss_base_score ? (
+                          {(cve.cvss_base_score !== null && cve.cvss_base_score !== undefined) ? (
                             <span
                               className={`badge ${
                                 cve.cvss_base_label === 'CRITICAL' ? 'badge-rose' :
