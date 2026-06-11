@@ -529,6 +529,8 @@ def run_pipeline():
             base_raw_dir=base_raw_dir,
             output_dir=processed_dir,
             max_size_mb=Config.MAX_JSON_SIZE_MB,
+            fallback_keywords=keywords if not notion_success else None,
+            fallback_products=products if not notion_success else None,
         )
         logger.info(f"Successfully exported JSON data mart to {exported_path}")
         stats["export_status"] = "SUCCESS"
