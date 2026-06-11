@@ -136,8 +136,214 @@ export default function App() {
     const totalCves = data.meta.totals.cves;
     const totalArxiv = data.meta.totals.arxiv;
     const totalArticles = data.meta.totals.rss_articles;
-    const activeKeywords = data.meta.keywords.filter(k => k.status.toLowerCase() === 'active');
-    const activeProducts = data.meta.products.filter(p => p.status.toLowerCase() === 'active');
+    const activeKeywords = data.meta.keywords ? data.meta.keywords.filter(k => k.status.toLowerCase() === 'active') : [];
+    const activeProducts = data.meta.products ? data.meta.products.filter(p => p.status.toLowerCase() === 'active') : [];
+
+    // 🌟 新着判定ヘルパー
+    const isNewItem = (dateString) => {
+      if (!dateString) return false;
+      const itemDate = new Date(dateString);
+      const now = new Date();
+      const diffMs = now - itemDate;
+      const diffHours = diffMs / (1000 * 60 * 60);
+      return diffHours <= 72; // 3日以内を新着とする
+    };
+
+    const renderNewBadge = (dateString) => {
+      if (!isNewItem(dateString)) return null;
+      return (
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', background: 'rgba(239, 68, 68, 0.15)', color: '#ef4444', border: '1px solid rgba(239, 68, 68, 0.25)', fontSize: '0.65rem', padding: '2px 6px', borderRadius: '4px', fontWeight: 600, animation: 'pulse-badge 2s infinite' }}>
+          <span style={{ width: '5px', height: '5px', background: '#ef4444', borderRadius: '50%', display: 'inline-block' }}></span>
+          NEW
+        </span>
+      );
+    };
+
+    // 🌟 緊急アラートの抽出とレンダリング
+    const criticalThreats = data.cves.filter(cve => cve.is_kev || (cve.cvss_base_score >= 9.0));
+
+    const renderAlerts = () => {
+      if (criticalThreats.length === 0) {
+        return (
+          <div style={{ background: 'rgba(16, 185, 129, 0.03)', border: '1px solid rgba(16, 185, 129, 0.15)', padding: '16px 20px', borderRadius: '12px', marginBottom: '24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <span style={{ display: 'inline-flex', padding: '6px', background: 'rgba(16, 185, 129, 0.15)', borderRadius: '50%', color: '#10b981' }}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            </span>
+            <div>
+              <strong style={{ color: '#10b981', fontSize: '0.95rem' }}>現在、検知された緊急の脅威はありません。</strong>
+              <p style={{ color: '#94a3b8', fontSize: '0.825rem', marginTop: '2px' }}>CISA KEV（既知の悪用された脆弱性）および CVSS 9.0 以上のAI関連脆弱性は検知されていません。</p>
+            </div>
+          </div>
+        );
+      }
+
+      return (
+        <div style={{ background: 'rgba(244, 63, 94, 0.05)', border: '1px solid rgba(244, 63, 94, 0.2)', padding: '20px', borderRadius: '12px', marginBottom: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ display: 'inline-flex', padding: '6px', background: '#f43f5e', borderRadius: '50%', color: '#ffffff', animation: 'pulse-danger 2s infinite' }}>
+              <Icons.AlertTriangle />
+            </span>
+            <div>
+              <strong style={{ color: '#f43f5e', fontSize: '1rem', letterSpacing: '0.05em' }}>【重要アラート】緊急対応が必要なAI関連脆弱性 ({criticalThreats.length}件)</strong>
+              <p style={{ color: '#cbd5e1', fontSize: '0.85rem', marginTop: '2px' }}>CISA KEVに登録されているか、またはCVSS基本値が 9.0 以上の極めて危険な脆弱性が検出されました。</p>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '200px', overflowY: 'auto', paddingRight: '6px' }}>
+            {criticalThreats.map((cve, idx) => (
+              <div key={idx} style={{ background: 'rgba(15, 17, 26, 0.6)', border: '1px solid var(--border)', padding: '12px 16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className="font-mono" style={{ fontWeight: 700, color: 'var(--accent-rose)', fontSize: '0.9rem' }}>{cve.cve_id}</span>
+                    {cve.is_kev && <span className="badge badge-rose" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>CISA KEV 悪用済</span>}
+                    {cve.cvss_base_score && <span className="badge badge-rose" style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e' }}>CVSS {cve.cvss_base_score}</span>}
+                  </div>
+                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{cve.description}</p>
+                </div>
+                <button onClick={() => { setActiveTab('vulnerabilities'); setCveSearch(cve.cve_id); setExpandedCves({ [cve.cve_id]: true }); }} className="badge badge-cyan" style={{ border: 'none', cursor: 'pointer', padding: '6px 12px', fontSize: '0.75rem' }}>
+                  詳細を確認
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      );
+    };
+
+    // 🌟 深刻度割合円グラフの集計とレンダリング
+    let criticalCount = 0;
+    let highCount = 0;
+    let mediumCount = 0;
+    let lowCount = 0;
+    let unknownCount = 0;
+
+    data.cves.forEach(cve => {
+      const label = cve.cvss_base_label ? cve.cvss_base_label.toUpperCase() : 'UNKNOWN';
+      if (label === 'CRITICAL') criticalCount++;
+      else if (label === 'HIGH') highCount++;
+      else if (label === 'MEDIUM') mediumCount++;
+      else if (label === 'LOW') lowCount++;
+      else unknownCount++;
+    });
+
+    const totalCvesWithScore = criticalCount + highCount + mediumCount + lowCount + unknownCount;
+
+    // SVG values
+    const size = 100;
+    const strokeWidth = 10;
+    const radius = (size - strokeWidth) / 2;
+    const circumference = 2 * Math.PI * radius;
+
+    const getPercentage = (count) => totalCvesWithScore > 0 ? (count / totalCvesWithScore) * 100 : 0;
+
+    const critPercent = getPercentage(criticalCount);
+    const highPercent = getPercentage(highCount);
+    const medPercent = getPercentage(mediumCount);
+    const lowPercent = getPercentage(lowCount);
+    const unkPercent = getPercentage(unknownCount);
+
+    const critStroke = (critPercent / 100) * circumference;
+    const highStroke = (highPercent / 100) * circumference;
+    const medStroke = (medPercent / 100) * circumference;
+    const lowStroke = (lowPercent / 100) * circumference;
+    const unkStroke = (unkPercent / 100) * circumference;
+
+    const renderSeverityChart = () => {
+      if (totalCvesWithScore === 0) return null;
+
+      return (
+        <div className="glass-panel" style={{ padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <h4 style={{ fontSize: '0.9rem', letterSpacing: '0.05em', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Icons.Bug />
+            脆弱性深刻度の構成割合
+          </h4>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '20px', flexWrap: 'wrap', justifyContent: 'center' }}>
+            {/* SVG Donut */}
+            <div style={{ position: 'relative', width: `${size}px`, height: `${size}px` }}>
+              <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} style={{ transform: 'rotate(-90deg)' }}>
+                {/* Background circle */}
+                <circle cx={size/2} cy={size/2} r={radius} fill="transparent" stroke="rgba(255,255,255,0.05)" strokeWidth={strokeWidth} />
+
+                {/* Critical */}
+                {critStroke > 0 && (
+                  <circle cx={size/2} cy={size/2} r={radius} fill="transparent" stroke="#f43f5e" strokeWidth={strokeWidth}
+                    strokeDasharray={`${critStroke} ${circumference}`}
+                    strokeDashoffset={0}
+                  />
+                )}
+
+                {/* High */}
+                {highStroke > 0 && (
+                  <circle cx={size/2} cy={size/2} r={radius} fill="transparent" stroke="#ff7e67" strokeWidth={strokeWidth}
+                    strokeDasharray={`${highStroke} ${circumference}`}
+                    strokeDashoffset={-critStroke}
+                  />
+                )}
+
+                {/* Medium */}
+                {medStroke > 0 && (
+                  <circle cx={size/2} cy={size/2} r={radius} fill="transparent" stroke="#f59e0b" strokeWidth={strokeWidth}
+                    strokeDasharray={`${medStroke} ${circumference}`}
+                    strokeDashoffset={-(critStroke + highStroke)}
+                  />
+                )}
+
+                {/* Low */}
+                {lowStroke > 0 && (
+                  <circle cx={size/2} cy={size/2} r={radius} fill="transparent" stroke="#3b82f6" strokeWidth={strokeWidth}
+                    strokeDasharray={`${lowStroke} ${circumference}`}
+                    strokeDashoffset={-(critStroke + highStroke + medStroke)}
+                  />
+                )}
+
+                {/* Unknown / NA */}
+                {unkStroke > 0 && (
+                  <circle cx={size/2} cy={size/2} r={radius} fill="transparent" stroke="#64748b" strokeWidth={strokeWidth}
+                    strokeDasharray={`${unkStroke} ${circumference}`}
+                    strokeDashoffset={-(critStroke + highStroke + medStroke + lowStroke)}
+                  />
+                )}
+              </svg>
+              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                <span style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)' }}>{data.cves.length}</span>
+                <span style={{ fontSize: '0.6rem', color: 'var(--text-muted)' }}>総件数</span>
+              </div>
+            </div>
+
+            {/* Legend */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: '1', minWidth: '120px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
+                  <span style={{ width: '8px', height: '8px', background: '#f43f5e', borderRadius: '50%' }}></span>
+                  CRITICAL
+                </span>
+                <strong style={{ color: 'var(--text-primary)' }}>{critPercent.toFixed(0)}%</strong>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
+                  <span style={{ width: '8px', height: '8px', background: '#ff7e67', borderRadius: '50%' }}></span>
+                  HIGH
+                </span>
+                <strong style={{ color: 'var(--text-primary)' }}>{highPercent.toFixed(0)}%</strong>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
+                  <span style={{ width: '8px', height: '8px', background: '#f59e0b', borderRadius: '50%' }}></span>
+                  MEDIUM
+                </span>
+                <strong style={{ color: 'var(--text-primary)' }}>{medPercent.toFixed(0)}%</strong>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.75rem' }}>
+                <span style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', color: 'var(--text-secondary)' }}>
+                  <span style={{ width: '8px', height: '8px', background: '#3b82f6', borderRadius: '50%' }}></span>
+                  LOW
+                </span>
+                <strong style={{ color: 'var(--text-primary)' }}>{lowPercent.toFixed(0)}%</strong>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
 
     // Aggregate latest feed (Articles + CVEs + arXiv)
     const recentFeed = [];
@@ -181,6 +387,21 @@ export default function App() {
 
     return (
       <div className="fade-in">
+        <style>{`
+          @keyframes pulse-danger {
+            0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0.4); }
+            70% { transform: scale(1.1); box-shadow: 0 0 0 8px rgba(244, 63, 94, 0); }
+            100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(244, 63, 94, 0); }
+          }
+          @keyframes pulse-badge {
+            0% { opacity: 0.7; }
+            50% { opacity: 1; }
+            100% { opacity: 0.7; }
+          }
+        `}</style>
+
+        {renderAlerts()}
+
         <div className="stat-grid">
           <div className="glass-panel stat-card">
             <span className="stat-label">監視対象CVE数</span>
@@ -211,7 +432,10 @@ export default function App() {
               {recentFeed.slice(0, 10).map((item, idx) => (
                 <div key={idx} style={{ paddingBottom: '20px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                    <span className={`badge ${item.badge}`}>{item.badgeText}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span className={`badge ${item.badge}`}>{item.badgeText}</span>
+                      {renderNewBadge(item.date)}
+                    </div>
                     <span className="sync-time">{formatDateTime(item.date)}</span>
                   </div>
                   <a href={item.url} target="_blank" rel="noopener noreferrer" className="card-title" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
@@ -227,12 +451,15 @@ export default function App() {
 
           {/* Configuration Status */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '30px' }}>
+            {renderSeverityChart()}
+
             <div className="glass-panel" style={{ padding: '24px' }}>
               <h4 style={{ marginBottom: '16px', fontSize: '0.95rem', letterSpacing: '0.05em' }}>監視対象AI製品</h4>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
                 {activeProducts.map((p, idx) => (
                   <span key={idx} className="badge badge-cyan" style={{ fontSize: '0.8rem' }}>{p.product_name}</span>
                 ))}
+                {activeProducts.length === 0 && <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>設定なし</span>}
               </div>
             </div>
 
@@ -242,6 +469,7 @@ export default function App() {
                 {activeKeywords.map((k, idx) => (
                   <span key={idx} className="badge badge-purple" style={{ fontSize: '0.8rem' }}>{k.keyword}</span>
                 ))}
+                {activeKeywords.length === 0 && <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>設定なし</span>}
               </div>
             </div>
 

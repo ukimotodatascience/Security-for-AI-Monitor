@@ -199,6 +199,15 @@ def run_pipeline():
         if Config.NOTION_API_KEY:
             failed_stages.append("notion")
         sources, keywords, products = get_default_mock_data()
+
+        # Save mock configurations to storage
+        if sources:
+            storage.save_notion_sources(sources)
+        if keywords:
+            storage.save_notion_keywords(keywords)
+        if products:
+            storage.save_notion_products(products)
+
         stats["notion_sources"] = len(sources)
         stats["notion_keywords"] = len(keywords)
         stats["notion_products"] = len(products)
