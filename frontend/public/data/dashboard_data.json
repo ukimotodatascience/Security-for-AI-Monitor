@@ -6814,14 +6814,16 @@
           "name": "Incorrect Privilege Assignment",
           "description": "A product incorrectly assigns a privilege to a particular actor, creating an unintended sphere of control for that actor.",
           "abstraction": "Base",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な特権の割り当て"
         },
         {
           "cwe_id": "CWE-285",
           "name": "Improper Authorization",
           "description": "The product does not perform or incorrectly performs an authorization check when an actor attempts to access a resource or perform an action.",
           "abstraction": "Class",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な認可"
         }
       ],
       "advisories": []
@@ -6853,7 +6855,8 @@
           "name": "Incorrect Privilege Assignment",
           "description": "A product incorrectly assigns a privilege to a particular actor, creating an unintended sphere of control for that actor.",
           "abstraction": "Base",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な特権の割り当て"
         },
         {
           "cwe_id": "CWE-269",
@@ -6931,14 +6934,16 @@
           "name": "Incorrect Privilege Assignment",
           "description": "A product incorrectly assigns a privilege to a particular actor, creating an unintended sphere of control for that actor.",
           "abstraction": "Base",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な特権の割り当て"
         },
         {
           "cwe_id": "CWE-285",
           "name": "Improper Authorization",
           "description": "The product does not perform or incorrectly performs an authorization check when an actor attempts to access a resource or perform an action.",
           "abstraction": "Class",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な認可"
         }
       ],
       "advisories": []
@@ -7040,7 +7045,8 @@
           "name": "Improper Authorization",
           "description": "The product does not perform or incorrectly performs an authorization check when an actor attempts to access a resource or perform an action.",
           "abstraction": "Class",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な認可"
         },
         {
           "cwe_id": "CWE-639",
@@ -7079,7 +7085,8 @@
           "name": "Improper Authorization",
           "description": "The product does not perform or incorrectly performs an authorization check when an actor attempts to access a resource or perform an action.",
           "abstraction": "Class",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な認可"
         },
         {
           "cwe_id": "CWE-863",
@@ -9292,7 +9299,8 @@
           "name": "Improper Authorization",
           "description": "The product does not perform or incorrectly performs an authorization check when an actor attempts to access a resource or perform an action.",
           "abstraction": "Class",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な認可"
         },
         {
           "cwe_id": "CWE-639",
@@ -9370,7 +9378,8 @@
           "name": "Incorrect Privilege Assignment",
           "description": "A product incorrectly assigns a privilege to a particular actor, creating an unintended sphere of control for that actor.",
           "abstraction": "Base",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な特権の割り当て"
         },
         {
           "cwe_id": "CWE-284",
@@ -11655,7 +11664,8 @@
           "name": "Improper Authorization",
           "description": "The product does not perform or incorrectly performs an authorization check when an actor attempts to access a resource or perform an action.",
           "abstraction": "Class",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な認可"
         },
         {
           "cwe_id": "CWE-639",
@@ -11912,7 +11922,8 @@
           "name": "Inefficient Regular Expression Complexity",
           "description": "The product uses a regular expression with a worst-case computational complexity that is inefficient and possibly exponential.",
           "abstraction": "Base",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "非効率的な正規表現の複雑さ"
         }
       ],
       "advisories": []
@@ -12447,7 +12458,8 @@
           "name": "Improper Authorization",
           "description": "The product does not perform or incorrectly performs an authorization check when an actor attempts to access a resource or perform an action.",
           "abstraction": "Class",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な認可"
         }
       ],
       "advisories": []
@@ -13918,7 +13930,8 @@
           "name": "Incorrect Privilege Assignment",
           "description": "A product incorrectly assigns a privilege to a particular actor, creating an unintended sphere of control for that actor.",
           "abstraction": "Base",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な特権の割り当て"
         }
       ],
       "advisories": []
@@ -14494,7 +14507,9 @@
         "due_date": "2026-06-10",
         "known_ransomware_campaign_use": "Known",
         "required_action": "Apply mitigations per vendor instructions, follow applicable BOD 22-01 guidance for cloud services, or discontinue use of the product if mitigations are unavailable.",
-        "notes": "This vulnerability could affect an open-source component, third-party library, protocol, or proprietary implementation that could be used by different products. For more information, please see: https://github.com/nrwl/nx-console/security/advisories/GHSA-c9j4-9m59-847w ; https://nvd.nist.gov/vuln/detail/CVE-2026-48027"
+        "notes": "This vulnerability could affect an open-source component, third-party library, protocol, or proprietary implementation that could be used by different products. For more information, please see: https://github.com/nrwl/nx-console/security/advisories/GHSA-c9j4-9m59-847w ; https://nvd.nist.gov/vuln/detail/CVE-2026-48027",
+        "vulnerablity_name_ja": "Nx Consoleの埋め込み悪意のあるコードの脆弱性",
+        "required_action_ja": "ベンダーの指示に従って緩和策を適用するか、クラウドサービスについては適用可能なBOD 22-01ガイダンスに従うか、緩和策が利用できない場合は製品の使用を中止してください。"
       },
       "cwes": [
         {
@@ -15733,7 +15748,8 @@
           "name": "Improper Authorization",
           "description": "The product does not perform or incorrectly performs an authorization check when an actor attempts to access a resource or perform an action.",
           "abstraction": "Class",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な認可"
         },
         {
           "cwe_id": "CWE-287",
@@ -20037,7 +20053,8 @@
           "name": "Incorrect Privilege Assignment",
           "description": "A product incorrectly assigns a privilege to a particular actor, creating an unintended sphere of control for that actor.",
           "abstraction": "Base",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な特権の割り当て"
         },
         {
           "cwe_id": "CWE-284",
@@ -20115,14 +20132,16 @@
           "name": "Incorrect Privilege Assignment",
           "description": "A product incorrectly assigns a privilege to a particular actor, creating an unintended sphere of control for that actor.",
           "abstraction": "Base",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な特権の割り当て"
         },
         {
           "cwe_id": "CWE-285",
           "name": "Improper Authorization",
           "description": "The product does not perform or incorrectly performs an authorization check when an actor attempts to access a resource or perform an action.",
           "abstraction": "Class",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な認可"
         }
       ],
       "advisories": []
@@ -20154,14 +20173,16 @@
           "name": "Incorrect Privilege Assignment",
           "description": "A product incorrectly assigns a privilege to a particular actor, creating an unintended sphere of control for that actor.",
           "abstraction": "Base",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な特権の割り当て"
         },
         {
           "cwe_id": "CWE-285",
           "name": "Improper Authorization",
           "description": "The product does not perform or incorrectly performs an authorization check when an actor attempts to access a resource or perform an action.",
           "abstraction": "Class",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な認可"
         }
       ],
       "advisories": []
@@ -20684,14 +20705,16 @@
           "name": "Incorrect Privilege Assignment",
           "description": "A product incorrectly assigns a privilege to a particular actor, creating an unintended sphere of control for that actor.",
           "abstraction": "Base",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な特権の割り当て"
         },
         {
           "cwe_id": "CWE-285",
           "name": "Improper Authorization",
           "description": "The product does not perform or incorrectly performs an authorization check when an actor attempts to access a resource or perform an action.",
           "abstraction": "Class",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な認可"
         }
       ],
       "advisories": []
@@ -21403,14 +21426,16 @@
           "name": "Incorrect Privilege Assignment",
           "description": "A product incorrectly assigns a privilege to a particular actor, creating an unintended sphere of control for that actor.",
           "abstraction": "Base",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な特権の割り当て"
         },
         {
           "cwe_id": "CWE-285",
           "name": "Improper Authorization",
           "description": "The product does not perform or incorrectly performs an authorization check when an actor attempts to access a resource or perform an action.",
           "abstraction": "Class",
-          "status": "Draft"
+          "status": "Draft",
+          "name_ja": "不適切な認可"
         }
       ],
       "advisories": []
