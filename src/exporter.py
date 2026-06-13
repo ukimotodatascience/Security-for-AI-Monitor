@@ -241,37 +241,55 @@ def export_data(
         if category == "cves":
             desc = item_data.get("description")
             if is_likely_english(desc):
-                item_data["description_ja"] = translator.translate(desc)
+                translated = translator.translate(desc)
+                if translated:
+                    item_data["description_ja"] = translated
             # Translate nested advisories
             for adv in item_data.get("advisories", []):
                 adv_summary = adv.get("summary")
                 if is_likely_english(adv_summary):
-                    adv["summary_ja"] = translator.translate(adv_summary)
+                    translated_adv = translator.translate(adv_summary)
+                    if translated_adv:
+                        adv["summary_ja"] = translated_adv
         elif category == "arxiv":
             title = item_data.get("title")
             summary = item_data.get("summary")
             if is_likely_english(title):
-                item_data["title_ja"] = translator.translate(title)
+                translated_title = translator.translate(title)
+                if translated_title:
+                    item_data["title_ja"] = translated_title
             if is_likely_english(summary):
-                item_data["summary_ja"] = translator.translate(summary)
+                translated_summary = translator.translate(summary)
+                if translated_summary:
+                    item_data["summary_ja"] = translated_summary
         elif category == "rss_articles":
             title = item_data.get("title")
             summary = item_data.get("summary")
             if is_likely_english(title):
-                item_data["title_ja"] = translator.translate(title)
+                translated_title = translator.translate(title)
+                if translated_title:
+                    item_data["title_ja"] = translated_title
             if is_likely_english(summary):
-                item_data["summary_ja"] = translator.translate(summary)
+                translated_summary = translator.translate(summary)
+                if translated_summary:
+                    item_data["summary_ja"] = translated_summary
         elif category == "rss_news":
             title = item_data.get("title")
             summary = item_data.get("summary")
             if is_likely_english(title):
-                item_data["title_ja"] = translator.translate(title)
+                translated_title = translator.translate(title)
+                if translated_title:
+                    item_data["title_ja"] = translated_title
             if is_likely_english(summary):
-                item_data["summary_ja"] = translator.translate(summary)
+                translated_summary = translator.translate(summary)
+                if translated_summary:
+                    item_data["summary_ja"] = translated_summary
         elif category == "ghsa_advisories":
             summary = item_data.get("summary")
             if is_likely_english(summary):
-                item_data["summary_ja"] = translator.translate(summary)
+                translated_summary = translator.translate(summary)
+                if translated_summary:
+                    item_data["summary_ja"] = translated_summary
 
         # Serialize only this item to measure its size contribution
         item_json = json.dumps(item_data, cls=DateTimeEncoder, ensure_ascii=False)

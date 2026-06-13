@@ -4,6 +4,7 @@ import hashlib
 import time
 import re
 import logging
+from typing import Optional
 import httpx
 
 logger = logging.getLogger("Translator")
@@ -57,15 +58,15 @@ class Translator:
 
     def translate(
         self, text: str, target_lang: str = "ja", source_lang: str = "en"
-    ) -> str:
+    ) -> Optional[str]:
         if not text or not isinstance(text, str):
-            return ""
+            return None
         text_stripped = text.strip()
         if not text_stripped:
-            return ""
+            return None
 
         if self.circuit_broken:
-            return text_stripped
+            return None
 
         # Use MD5 hash of the original text as key
         key = hashlib.md5(text_stripped.encode("utf-8")).hexdigest()
@@ -107,7 +108,7 @@ class Translator:
                 )
                 time.sleep(1.0)
 
-        # Fallback to original text if translation failed
+        # Fallback to None if translation failed
         self.error_count += 1
         if self.error_count >= 3:
             self.circuit_broken = True
@@ -115,4 +116,4 @@ class Translator:
                 "Translation service consecutive errors reached threshold. Circuit breaker tripped. Skipping further requests."
             )
 
-        return text_stripped
+        return None
