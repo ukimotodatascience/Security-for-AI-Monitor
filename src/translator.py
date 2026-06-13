@@ -65,13 +65,13 @@ class Translator:
         if not text_stripped:
             return None
 
-        if self.circuit_broken:
-            return None
-
         # Use MD5 hash of the original text as key
         key = hashlib.md5(text_stripped.encode("utf-8")).hexdigest()
         if key in self.cache:
             return self.cache[key]
+
+        if self.circuit_broken:
+            return None
 
         # Call Google gtx API
         url = "https://translate.googleapis.com/translate_a/single"
