@@ -55,7 +55,7 @@ export default function App() {
   const toggleLocalOriginal = (id) => {
     setLocalOriginals(prev => ({
       ...prev,
-      [id]: !prev[id]
+      [id]: !(prev[id] ?? showOriginal)
     }));
   };
 
