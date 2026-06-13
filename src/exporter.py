@@ -5,6 +5,7 @@ from datetime import datetime, timezone, date
 from typing import Dict, Any
 
 from src.storage import FileStorage
+from src.translator import Translator, is_likely_english
 
 logger = logging.getLogger("DataExporter")
 
@@ -227,11 +228,75 @@ def export_data(
 
     dropped_count = 0
 
+    # Initialize Translator
+    translator = Translator(cache_dir=output_dir)
+
     # We estimate size growth instead of calling json.dumps() on the entire dict in each loop
     # comma and brackets: each item in list roughly adds length of JSON + 2 bytes (comma & formatting)
     for item in time_series_items:
         category = item["category"]
         item_data = item["data"]
+
+        # Pre-check size before translation to avoid unnecessary translation requests on dropped items
+        item_json_pre = json.dumps(item_data, cls=DateTimeEncoder, ensure_ascii=False)
+        item_size_pre = len(item_json_pre.encode("utf-8")) + 2
+        if current_size + item_size_pre > target_max_bytes:
+            dropped_count += 1
+            continue
+
+        # Apply translations if the content is likely English
+        if category == "cves":
+            desc = item_data.get("description")
+            if is_likely_english(desc):
+                translated = translator.translate(desc)
+                if translated:
+                    item_data["description_ja"] = translated
+            # Translate nested advisories
+            for adv in item_data.get("advisories", []):
+                adv_summary = adv.get("summary")
+                if is_likely_english(adv_summary):
+                    translated_adv = translator.translate(adv_summary)
+                    if translated_adv:
+                        adv["summary_ja"] = translated_adv
+        elif category == "arxiv":
+            title = item_data.get("title")
+            summary = item_data.get("summary")
+            if is_likely_english(title):
+                translated_title = translator.translate(title)
+                if translated_title:
+                    item_data["title_ja"] = translated_title
+            if is_likely_english(summary):
+                translated_summary = translator.translate(summary)
+                if translated_summary:
+                    item_data["summary_ja"] = translated_summary
+        elif category == "rss_articles":
+            title = item_data.get("title")
+            summary = item_data.get("summary")
+            if is_likely_english(title):
+                translated_title = translator.translate(title)
+                if translated_title:
+                    item_data["title_ja"] = translated_title
+            if is_likely_english(summary):
+                translated_summary = translator.translate(summary)
+                if translated_summary:
+                    item_data["summary_ja"] = translated_summary
+        elif category == "rss_news":
+            title = item_data.get("title")
+            summary = item_data.get("summary")
+            if is_likely_english(title):
+                translated_title = translator.translate(title)
+                if translated_title:
+                    item_data["title_ja"] = translated_title
+            if is_likely_english(summary):
+                translated_summary = translator.translate(summary)
+                if translated_summary:
+                    item_data["summary_ja"] = translated_summary
+        elif category == "ghsa_advisories":
+            summary = item_data.get("summary")
+            if is_likely_english(summary):
+                translated_summary = translator.translate(summary)
+                if translated_summary:
+                    item_data["summary_ja"] = translated_summary
 
         # Serialize only this item to measure its size contribution
         item_json = json.dumps(item_data, cls=DateTimeEncoder, ensure_ascii=False)
@@ -248,6 +313,9 @@ def export_data(
         export_dict[category].append(item_data)
         current_size += item_size
         added_counts[category] += 1
+
+    # Save translation cache to disk
+    translator.save_cache()
 
     logger.info(f"JSON assembly completed. Final estimated size: {current_size} bytes.")
     logger.info(f"Added items: {added_counts}")
