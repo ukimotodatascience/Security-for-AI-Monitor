@@ -31,6 +31,8 @@ class Translator:
         self.cache_dir = cache_dir
         self.cache_file = os.path.join(cache_dir, "translation_cache.json")
         self.cache = {}
+        self.error_count = 0
+        self.circuit_broken = False
         self.load_cache()
 
     def load_cache(self):
@@ -62,6 +64,9 @@ class Translator:
         if not text_stripped:
             return ""
 
+        if self.circuit_broken:
+            return text_stripped
+
         # Use MD5 hash of the original text as key
         key = hashlib.md5(text_stripped.encode("utf-8")).hexdigest()
         if key in self.cache:
@@ -86,6 +91,8 @@ class Translator:
                                 translated_sentences.append(item[0])
                         translated_text = "".join(translated_sentences)
 
+                        # Reset error count on successful request
+                        self.error_count = 0
                         # Save to cache
                         self.cache[key] = translated_text
                         return translated_text
@@ -101,4 +108,11 @@ class Translator:
                 time.sleep(1.0)
 
         # Fallback to original text if translation failed
+        self.error_count += 1
+        if self.error_count >= 3:
+            self.circuit_broken = True
+            logger.error(
+                "Translation service consecutive errors reached threshold. Circuit breaker tripped. Skipping further requests."
+            )
+
         return text_stripped

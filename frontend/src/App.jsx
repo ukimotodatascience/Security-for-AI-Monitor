@@ -572,6 +572,7 @@ export default function App() {
     const filteredCves = data.cves.filter(cve => {
       const matchesSearch = cve.cve_id.toLowerCase().includes(cveSearch.toLowerCase()) ||
         cve.description.toLowerCase().includes(cveSearch.toLowerCase()) ||
+        (cve.description_ja && cve.description_ja.toLowerCase().includes(cveSearch.toLowerCase())) ||
         cve.cpe_names.some(cpe => cpe.toLowerCase().includes(cveSearch.toLowerCase()));
 
       const matchesSeverity = cveSeverity === 'all' ||
@@ -812,7 +813,9 @@ export default function App() {
   const renderArxiv = () => {
     const filteredPapers = data.arxiv.filter(paper =>
       paper.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (paper.title_ja && paper.title_ja.toLowerCase().includes(searchQuery.toLowerCase())) ||
       paper.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (paper.summary_ja && paper.summary_ja.toLowerCase().includes(searchQuery.toLowerCase())) ||
       paper.authors.some(author => author.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
@@ -911,7 +914,9 @@ export default function App() {
   const renderBlogsAndNews = () => {
     const filteredArticles = data.rss_articles.filter(art =>
       art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (art.summary && art.summary.toLowerCase().includes(searchQuery.toLowerCase()))
+      (art.title_ja && art.title_ja.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (art.summary && art.summary.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (art.summary_ja && art.summary_ja.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     return (
