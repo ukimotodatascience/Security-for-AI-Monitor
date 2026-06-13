@@ -638,6 +638,7 @@ export default function App() {
               ) : (
                 filteredCves.map((cve) => {
                   const isExpanded = !!expandedCves[cve.cve_id];
+                  const isOriginal = localOriginals[cve.cve_id] !== undefined ? localOriginals[cve.cve_id] : showOriginal;
                   return (
                     <React.Fragment key={cve.cve_id}>
                       <tr
@@ -690,7 +691,6 @@ export default function App() {
                           <td colSpan="7" className="cve-detail-expanded">
                             <div className="fade-in">
                               {(() => {
-                                const isOriginal = localOriginals[cve.cve_id] !== undefined ? localOriginals[cve.cve_id] : showOriginal;
                                 return (
                                   <>
                                     <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
