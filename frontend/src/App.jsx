@@ -48,6 +48,17 @@ export default function App() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOption, setFilterOption] = useState('all');
 
+  // Translation settings
+  const [showOriginal, setShowOriginal] = useState(false);
+  const [localOriginals, setLocalOriginals] = useState({});
+
+  const toggleLocalOriginal = (id) => {
+    setLocalOriginals(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
+
   // Vulnerability specific filters
   const [cveSearch, setCveSearch] = useState('');
   const [cveSeverity, setCveSeverity] = useState('all');
@@ -189,21 +200,46 @@ export default function App() {
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', maxHeight: '200px', overflowY: 'auto', paddingRight: '6px' }}>
-            {criticalThreats.map((cve, idx) => (
-              <div key={idx} style={{ background: 'rgba(15, 17, 26, 0.6)', border: '1px solid var(--border)', padding: '12px 16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span className="font-mono" style={{ fontWeight: 700, color: 'var(--accent-rose)', fontSize: '0.9rem' }}>{cve.cve_id}</span>
-                    {cve.is_kev && <span className="badge badge-rose" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>CISA KEV 悪用済</span>}
-                    {cve.cvss_base_score && <span className="badge badge-rose" style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e' }}>CVSS {cve.cvss_base_score}</span>}
+            {criticalThreats.map((cve, idx) => {
+              const isOriginal = localOriginals[cve.cve_id] !== undefined ? localOriginals[cve.cve_id] : showOriginal;
+              return (
+                <div key={idx} style={{ background: 'rgba(15, 17, 26, 0.6)', border: '1px solid var(--border)', padding: '12px 16px', borderRadius: '8px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '16px' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                      <span className="font-mono" style={{ fontWeight: 700, color: 'var(--accent-rose)', fontSize: '0.9rem' }}>{cve.cve_id}</span>
+                      {cve.is_kev && <span className="badge badge-rose" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>CISA KEV 悪用済</span>}
+                      {cve.cvss_base_score && <span className="badge badge-rose" style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e' }}>CVSS {cve.cvss_base_score}</span>}
+                      {cve.description_ja && (
+                        <button
+                          onClick={() => toggleLocalOriginal(cve.cve_id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            fontSize: '0.65rem',
+                            padding: '2px 4px',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border)',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '2px'
+                          }}
+                        >
+                          <Icons.Globe /> {isOriginal ? '翻訳' : '原文'}
+                        </button>
+                      )}
+                    </div>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {!isOriginal && cve.description_ja ? cve.description_ja : cve.description}
+                    </p>
                   </div>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.8rem', lineHeight: '1.4', display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{cve.description}</p>
+                  <button onClick={() => { setActiveTab('vulnerabilities'); setCveSearch(cve.cve_id); setExpandedCves({ [cve.cve_id]: true }); }} className="badge badge-cyan" style={{ border: 'none', cursor: 'pointer', padding: '6px 12px', fontSize: '0.75rem', flexShrink: 0 }}>
+                    詳細を確認
+                  </button>
                 </div>
-                <button onClick={() => { setActiveTab('vulnerabilities'); setCveSearch(cve.cve_id); setExpandedCves({ [cve.cve_id]: true }); }} className="badge badge-cyan" style={{ border: 'none', cursor: 'pointer', padding: '6px 12px', fontSize: '0.75rem' }}>
-                  詳細を確認
-                </button>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       );
@@ -349,9 +385,12 @@ export default function App() {
     const recentFeed = [];
     data.cves.slice(0, 5).forEach(cve => {
       recentFeed.push({
+        id: cve.cve_id,
         type: 'cve',
         title: `${cve.cve_id}: ${(cve.cvss_base_score !== null && cve.cvss_base_score !== undefined) ? `CVSS ${cve.cvss_base_score}` : 'スコア未設定'} (${cve.cvss_base_label || '不明'})`,
+        title_ja: null,
         desc: cve.description,
+        desc_ja: cve.description_ja,
         date: cve.published_at,
         badge: cve.is_kev ? 'badge-rose' : 'badge-amber',
         badgeText: cve.is_kev ? 'KEV 脆弱性' : 'CVE',
@@ -361,9 +400,12 @@ export default function App() {
 
     data.arxiv.slice(0, 5).forEach(paper => {
       recentFeed.push({
+        id: paper.arxiv_id,
         type: 'arxiv',
         title: paper.title,
+        title_ja: paper.title_ja,
         desc: paper.summary,
+        desc_ja: paper.summary_ja,
         date: paper.published_at,
         badge: 'badge-purple',
         badgeText: '研究論文',
@@ -373,9 +415,12 @@ export default function App() {
 
     data.rss_articles.slice(0, 5).forEach(art => {
       recentFeed.push({
+        id: art.article_id,
         type: 'article',
         title: art.title,
+        title_ja: art.title_ja,
         desc: art.summary || '要約がありません。',
+        desc_ja: art.summary_ja,
         date: art.published_at,
         badge: 'badge-blue',
         badgeText: art.source_name || '記事',
@@ -429,23 +474,48 @@ export default function App() {
               最新の脅威フィード（グローバル監視）
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {recentFeed.slice(0, 10).map((item, idx) => (
-                <div key={idx} style={{ paddingBottom: '20px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span className={`badge ${item.badge}`}>{item.badgeText}</span>
-                      {renderNewBadge(item.date)}
+              {recentFeed.slice(0, 10).map((item, idx) => {
+                const isOriginal = localOriginals[item.id] !== undefined ? localOriginals[item.id] : showOriginal;
+                return (
+                  <div key={idx} style={{ paddingBottom: '20px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span className={`badge ${item.badge}`}>{item.badgeText}</span>
+                        {renderNewBadge(item.date)}
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        {(item.title_ja || item.desc_ja) && (
+                          <button
+                            onClick={() => toggleLocalOriginal(item.id)}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'var(--text-muted)',
+                              cursor: 'pointer',
+                              fontSize: '0.7rem',
+                              padding: '2px 6px',
+                              borderRadius: '4px',
+                              border: '1px solid var(--border)',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                          >
+                            <Icons.Globe /> {isOriginal ? '翻訳' : '原文'}
+                          </button>
+                        )}
+                        <span className="sync-time">{formatDateTime(item.date)}</span>
+                      </div>
                     </div>
-                    <span className="sync-time">{formatDateTime(item.date)}</span>
+                    <a href={item.url} target="_blank" rel="noopener noreferrer" className="card-title" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
+                      {!isOriginal && item.title_ja ? item.title_ja : item.title} <Icons.ExternalLink />
+                    </a>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {!isOriginal && item.desc_ja ? item.desc_ja : item.desc}
+                    </p>
                   </div>
-                  <a href={item.url} target="_blank" rel="noopener noreferrer" className="card-title" style={{ color: 'var(--text-primary)', fontWeight: 600 }}>
-                    {item.title} <Icons.ExternalLink />
-                  </a>
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', lineHeight: '1.5', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                    {item.desc}
-                  </p>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
@@ -603,7 +673,7 @@ export default function App() {
                         </td>
                         <td style={{ fontSize: '0.9rem', lineHeight: '1.4', paddingRight: '20px' }}>
                           <div style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                            {cve.description}
+                            {!(localOriginals[cve.cve_id] !== undefined ? localOriginals[cve.cve_id] : showOriginal) && cve.description_ja ? cve.description_ja : cve.description}
                           </div>
                         </td>
                         <td>
@@ -618,13 +688,40 @@ export default function App() {
                         <tr>
                           <td colSpan="7" className="cve-detail-expanded">
                             <div className="fade-in">
-                              <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                <Icons.Bug /> 脆弱性詳細情報
-                              </h4>
-
-                              <p style={{ color: 'var(--text-primary)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px', background: 'rgba(0,0,0,0.1)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
-                                {cve.description}
-                              </p>
+                              {(() => {
+                                const isOriginal = localOriginals[cve.cve_id] !== undefined ? localOriginals[cve.cve_id] : showOriginal;
+                                return (
+                                  <>
+                                    <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
+                                      <Icons.Bug /> 脆弱性詳細情報
+                                      {cve.description_ja && (
+                                        <button
+                                          onClick={(e) => { e.stopPropagation(); toggleLocalOriginal(cve.cve_id); }}
+                                          style={{
+                                            background: 'none',
+                                            border: 'none',
+                                            color: 'var(--text-muted)',
+                                            cursor: 'pointer',
+                                            fontSize: '0.75rem',
+                                            padding: '4px 8px',
+                                            borderRadius: '4px',
+                                            border: '1px solid var(--border)',
+                                            marginLeft: 'auto',
+                                            display: 'flex',
+                                            alignItems: 'center',
+                                            gap: '4px'
+                                          }}
+                                        >
+                                          <Icons.Globe /> {isOriginal ? '日本語訳を表示' : '英語原文を表示'}
+                                        </button>
+                                      )}
+                                    </h4>
+                                    <p style={{ color: 'var(--text-primary)', fontSize: '0.95rem', lineHeight: '1.6', marginBottom: '20px', background: 'rgba(0,0,0,0.1)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+                                      {!isOriginal && cve.description_ja ? cve.description_ja : cve.description}
+                                    </p>
+                                  </>
+                                );
+                              })()}
 
                               <div className="cve-meta-info">
                                 <div>
@@ -684,7 +781,9 @@ export default function App() {
                                         <span className="font-mono" style={{ fontWeight: 600 }}>{adv.ghsa_id}</span>
                                         <span className="badge badge-blue">{adv.severity}</span>
                                       </div>
-                                      <p style={{ fontSize: '0.9rem', marginBottom: '8px' }}>{adv.summary}</p>
+                                      <p style={{ fontSize: '0.9rem', marginBottom: '8px' }}>
+                                        {!(localOriginals[cve.cve_id] !== undefined ? localOriginals[cve.cve_id] : showOriginal) && adv.summary_ja ? adv.summary_ja : adv.summary}
+                                      </p>
                                       <div style={{ display: 'flex', gap: '16px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
                                         <span>パッケージ: <code className="font-mono">{adv.affected_package}</code></span>
                                         {adv.patched_versions && <span>修正バージョン: <code className="font-mono">{adv.patched_versions}</code></span>}
@@ -735,44 +834,73 @@ export default function App() {
               条件に一致する論文が見つかりませんでした。
             </div>
           ) : (
-            filteredPapers.map((paper) => (
-              <div key={paper.arxiv_id} className="glass-panel card">
-                <div className="card-header">
-                  <span className="badge badge-purple" style={{ fontSize: '0.75rem' }}>arXiv: {paper.arxiv_id}</span>
-                  <span className="sync-time" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Icons.Calendar /> {formatDateOnly(paper.published_at)}
-                  </span>
-                </div>
-                <h3 className="card-title">{paper.title}</h3>
-                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>著者: {paper.authors.join(', ')}</p>
+            filteredPapers.map((paper) => {
+              const isOriginal = localOriginals[paper.arxiv_id] !== undefined ? localOriginals[paper.arxiv_id] : showOriginal;
+              return (
+                <div key={paper.arxiv_id} className="glass-panel card">
+                  <div className="card-header">
+                    <span className="badge badge-purple" style={{ fontSize: '0.75rem' }}>arXiv: {paper.arxiv_id}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: 'auto' }}>
+                      {(paper.title_ja || paper.summary_ja) && (
+                        <button
+                          onClick={() => toggleLocalOriginal(paper.arxiv_id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            fontSize: '0.75rem',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <Icons.Globe /> {isOriginal ? '翻訳' : '原文'}
+                        </button>
+                      )}
+                      <span className="sync-time" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Icons.Calendar /> {formatDateOnly(paper.published_at)}
+                      </span>
+                    </div>
+                  </div>
+                  <h3 className="card-title">
+                    {!isOriginal && paper.title_ja ? paper.title_ja : paper.title}
+                  </h3>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>著者: {paper.authors.join(', ')}</p>
 
-                <p className="card-summary">{paper.summary}</p>
+                  <p className="card-summary">
+                    {!isOriginal && paper.summary_ja ? paper.summary_ja : paper.summary}
+                  </p>
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
-                  {paper.categories.map((cat, i) => (
-                    <span key={i} className="badge badge-cyan" style={{ fontSize: '0.7rem' }}>{cat}</span>
-                  ))}
-                  {paper.owasp_mapping && paper.owasp_mapping.map((map, i) => (
-                    <span key={i} className="badge badge-amber" style={{ fontSize: '0.7rem' }}>{map}</span>
-                  ))}
-                  {paper.mitre_mapping && paper.mitre_mapping.map((map, i) => (
-                    <span key={i} className="badge badge-rose" style={{ fontSize: '0.7rem' }}>{map}</span>
-                  ))}
-                </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                    {paper.categories.map((cat, i) => (
+                      <span key={i} className="badge badge-cyan" style={{ fontSize: '0.7rem' }}>{cat}</span>
+                    ))}
+                    {paper.owasp_mapping && paper.owasp_mapping.map((map, i) => (
+                      <span key={i} className="badge badge-amber" style={{ fontSize: '0.7rem' }}>{map}</span>
+                    ))}
+                    {paper.mitre_mapping && paper.mitre_mapping.map((map, i) => (
+                      <span key={i} className="badge badge-rose" style={{ fontSize: '0.7rem' }}>{map}</span>
+                    ))}
+                  </div>
 
-                <div className="card-footer">
-                  <span>重要度スコア: <strong style={{ color: 'var(--accent-cyan)' }}>{paper.importance_score ? paper.importance_score.toFixed(2) : 'N/A'}</strong></span>
-                  <div style={{ display: 'flex', gap: '16px' }}>
-                    <a href={paper.abs_url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      Abstract <Icons.ExternalLink />
-                    </a>
-                    <a href={paper.pdf_url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                      PDF <Icons.ExternalLink />
-                    </a>
+                  <div className="card-footer">
+                    <span>重要度スコア: <strong style={{ color: 'var(--accent-cyan)' }}>{paper.importance_score ? paper.importance_score.toFixed(2) : 'N/A'}</strong></span>
+                    <div style={{ display: 'flex', gap: '16px' }}>
+                      <a href={paper.abs_url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        Abstract <Icons.ExternalLink />
+                      </a>
+                      <a href={paper.pdf_url} target="_blank" rel="noopener noreferrer" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        PDF <Icons.ExternalLink />
+                      </a>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
@@ -804,21 +932,49 @@ export default function App() {
               条件に一致する記事が見つかりませんでした。
             </div>
           ) : (
-            filteredArticles.map((art) => (
-              <div key={art.article_id} className="glass-panel card">
-                <div className="card-header">
-                  <span className="badge badge-blue">{art.source_name || 'RSS 記事'}</span>
-                  <span className="sync-time" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-                    <Icons.Calendar /> {formatDateOnly(art.published_at)}
-                  </span>
-                </div>
-                <h3 className="card-title">
-                  <a href={art.url} target="_blank" rel="noopener noreferrer">
-                    {art.title} <Icons.ExternalLink />
-                  </a>
-                </h3>
+            filteredArticles.map((art) => {
+              const isOriginal = localOriginals[art.article_id] !== undefined ? localOriginals[art.article_id] : showOriginal;
+              return (
+                <div key={art.article_id} className="glass-panel card">
+                  <div className="card-header">
+                    <span className="badge badge-blue">{art.source_name || 'RSS 記事'}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginLeft: 'auto' }}>
+                      {(art.title_ja || art.summary_ja) && (
+                        <button
+                          onClick={() => toggleLocalOriginal(art.article_id)}
+                          style={{
+                            background: 'none',
+                            border: 'none',
+                            color: 'var(--text-muted)',
+                            cursor: 'pointer',
+                            fontSize: '0.75rem',
+                            padding: '2px 6px',
+                            borderRadius: '4px',
+                            border: '1px solid var(--border)',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}
+                        >
+                          <Icons.Globe /> {isOriginal ? '翻訳' : '原文'}
+                        </button>
+                      )}
+                      <span className="sync-time" style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <Icons.Calendar /> {formatDateOnly(art.published_at)}
+                      </span>
+                    </div>
+                  </div>
+                  <h3 className="card-title">
+                    <a href={art.url} target="_blank" rel="noopener noreferrer">
+                      {!isOriginal && art.title_ja ? art.title_ja : art.title} <Icons.ExternalLink />
+                    </a>
+                  </h3>
 
-                {art.summary && <p className="card-summary">{art.summary}</p>}
+                  {art.summary && (
+                    <p className="card-summary">
+                      {!isOriginal && art.summary_ja ? art.summary_ja : art.summary}
+                    </p>
+                  )}
 
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
                   {art.owasp_mapping && art.owasp_mapping.map((map, i) => (
@@ -837,8 +993,9 @@ export default function App() {
                   {art.importance_score && <span>重要度: <strong style={{ color: 'var(--accent-cyan)' }}>{art.importance_score.toFixed(2)}</strong></span>}
                 </div>
               </div>
-            ))
-          )}
+            );
+          })
+        )}
         </div>
       </div>
     );
@@ -989,10 +1146,43 @@ export default function App() {
             </p>
           </div>
 
-          <span className="badge badge-emerald" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{ width: '6px', height: '6px', background: '#34d399', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 8px #34d399' }}></span>
-            監視アクティブ
-          </span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+            {/* Global translation toggle */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'rgba(22, 28, 41, 0.65)', padding: '6px 12px', borderRadius: '20px', border: '1px solid var(--border)' }}>
+              <span style={{ fontSize: '0.75rem', color: showOriginal ? 'var(--text-muted)' : 'var(--accent-cyan)', fontWeight: !showOriginal ? 600 : 400 }}>翻訳 (JA)</span>
+              <button
+                onClick={() => setShowOriginal(!showOriginal)}
+                style={{
+                  width: '36px',
+                  height: '20px',
+                  borderRadius: '10px',
+                  background: showOriginal ? 'var(--accent-cyan)' : 'rgba(255, 255, 255, 0.1)',
+                  border: 'none',
+                  cursor: 'pointer',
+                  position: 'relative',
+                  padding: 0,
+                  transition: 'background 0.3s'
+                }}
+              >
+                <div style={{
+                  width: '14px',
+                  height: '14px',
+                  borderRadius: '50%',
+                  background: '#ffffff',
+                  position: 'absolute',
+                  top: '3px',
+                  left: showOriginal ? '19px' : '3px',
+                  transition: 'left 0.3s'
+                }}></div>
+              </button>
+              <span style={{ fontSize: '0.75rem', color: showOriginal ? 'var(--accent-cyan)' : 'var(--text-muted)', fontWeight: showOriginal ? 600 : 400 }}>原文 (EN)</span>
+            </div>
+
+            <span className="badge badge-emerald" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span style={{ width: '6px', height: '6px', background: '#34d399', borderRadius: '50%', display: 'inline-block', boxShadow: '0 0 8px #34d399' }}></span>
+              監視アクティブ
+            </span>
+          </div>
         </div>
 
         {activeTab === 'overview' && renderOverview()}
