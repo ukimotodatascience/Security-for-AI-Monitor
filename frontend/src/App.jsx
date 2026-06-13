@@ -735,7 +735,7 @@ export default function App() {
                                     {cve.cwes && cve.cwes.length > 0 ? (
                                       cve.cwes.map((c, i) => (
                                         <div key={i} style={{ fontSize: '0.85rem' }}>
-                                          <span className="font-mono" style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{c.cwe_id}</span>: {c.name}
+                                          <span className="font-mono" style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{c.cwe_id}</span>: {!isOriginal && c.name_ja ? c.name_ja : c.name}
                                         </div>
                                       ))
                                     ) : (
@@ -763,11 +763,11 @@ export default function App() {
                                   </h5>
                                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', fontSize: '0.875rem' }}>
                                     <p><strong>対象製品:</strong> {cve.kev_info.product}</p>
-                                    <p><strong>悪用手法名:</strong> {cve.kev_info.vulnerablity_name}</p>
+                                    <p><strong>悪用手法名:</strong> {!isOriginal && cve.kev_info.vulnerablity_name_ja ? cve.kev_info.vulnerablity_name_ja : cve.kev_info.vulnerablity_name}</p>
                                     <p><strong>カタログ追加日:</strong> {formatDateOnly(cve.kev_info.added_date)}</p>
                                     <p><strong>ランサムウェア悪用:</strong> {cve.kev_info.known_ransomware_campaign_use}</p>
                                   </div>
-                                  <p style={{ marginTop: '12px', fontSize: '0.875rem' }}><strong>必要な対応策:</strong> {cve.kev_info.required_action}</p>
+                                  <p style={{ marginTop: '12px', fontSize: '0.875rem' }}><strong>必要な対応策:</strong> {!isOriginal && cve.kev_info.required_action_ja ? cve.kev_info.required_action_ja : cve.kev_info.required_action}</p>
                                 </div>
                               )}
 
