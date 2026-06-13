@@ -237,6 +237,13 @@ def export_data(
         category = item["category"]
         item_data = item["data"]
 
+        # Pre-check size before translation to avoid unnecessary translation requests on dropped items
+        item_json_pre = json.dumps(item_data, cls=DateTimeEncoder, ensure_ascii=False)
+        item_size_pre = len(item_json_pre.encode("utf-8")) + 2
+        if current_size + item_size_pre > target_max_bytes:
+            dropped_count += 1
+            continue
+
         # Apply translations if the content is likely English
         if category == "cves":
             desc = item_data.get("description")
