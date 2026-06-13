@@ -258,6 +258,26 @@ def export_data(
                     translated_adv = translator.translate(adv_summary)
                     if translated_adv:
                         adv["summary_ja"] = translated_adv
+            # Translate CISA KEV info if exists
+            kev_info = item_data.get("kev_info")
+            if kev_info:
+                v_name = kev_info.get("vulnerablity_name")
+                if is_likely_english(v_name):
+                    translated_v = translator.translate(v_name)
+                    if translated_v:
+                        kev_info["vulnerablity_name_ja"] = translated_v
+                req_action = kev_info.get("required_action")
+                if is_likely_english(req_action):
+                    translated_req = translator.translate(req_action)
+                    if translated_req:
+                        kev_info["required_action_ja"] = translated_req
+            # Translate CWE names if exist
+            for cwe in item_data.get("cwes", []):
+                cwe_name = cwe.get("name")
+                if is_likely_english(cwe_name):
+                    translated_cwe = translator.translate(cwe_name)
+                    if translated_cwe:
+                        cwe["name_ja"] = translated_cwe
         elif category == "arxiv":
             title = item_data.get("title")
             summary = item_data.get("summary")

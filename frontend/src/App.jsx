@@ -638,6 +638,10 @@ export default function App() {
               ) : (
                 filteredCves.map((cve) => {
                   const isExpanded = !!expandedCves[cve.cve_id];
+                  const isOriginal = localOriginals[cve.cve_id] !== undefined ? localOriginals[cve.cve_id] : showOriginal;
+                  const hasTranslation = !!cve.description_ja ||
+                    (cve.is_kev && cve.kev_info && (!!cve.kev_info.vulnerablity_name_ja || !!cve.kev_info.required_action_ja)) ||
+                    (cve.cwes && cve.cwes.some(c => c.name_ja));
                   return (
                     <React.Fragment key={cve.cve_id}>
                       <tr
@@ -690,12 +694,11 @@ export default function App() {
                           <td colSpan="7" className="cve-detail-expanded">
                             <div className="fade-in">
                               {(() => {
-                                const isOriginal = localOriginals[cve.cve_id] !== undefined ? localOriginals[cve.cve_id] : showOriginal;
                                 return (
                                   <>
                                     <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
                                       <Icons.Bug /> 脆弱性詳細情報
-                                      {cve.description_ja && (
+                                      {hasTranslation && (
                                         <button
                                           onClick={(e) => { e.stopPropagation(); toggleLocalOriginal(cve.cve_id); }}
                                           style={{
@@ -735,7 +738,7 @@ export default function App() {
                                     {cve.cwes && cve.cwes.length > 0 ? (
                                       cve.cwes.map((c, i) => (
                                         <div key={i} style={{ fontSize: '0.85rem' }}>
-                                          <span className="font-mono" style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{c.cwe_id}</span>: {c.name}
+                                          <span className="font-mono" style={{ color: 'var(--accent-cyan)', fontWeight: 600 }}>{c.cwe_id}</span>: {!isOriginal && c.name_ja ? c.name_ja : c.name}
                                         </div>
                                       ))
                                     ) : (
@@ -763,11 +766,11 @@ export default function App() {
                                   </h5>
                                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', fontSize: '0.875rem' }}>
                                     <p><strong>対象製品:</strong> {cve.kev_info.product}</p>
-                                    <p><strong>悪用手法名:</strong> {cve.kev_info.vulnerablity_name}</p>
+                                    <p><strong>悪用手法名:</strong> {!isOriginal && cve.kev_info.vulnerablity_name_ja ? cve.kev_info.vulnerablity_name_ja : cve.kev_info.vulnerablity_name}</p>
                                     <p><strong>カタログ追加日:</strong> {formatDateOnly(cve.kev_info.added_date)}</p>
                                     <p><strong>ランサムウェア悪用:</strong> {cve.kev_info.known_ransomware_campaign_use}</p>
                                   </div>
-                                  <p style={{ marginTop: '12px', fontSize: '0.875rem' }}><strong>必要な対応策:</strong> {cve.kev_info.required_action}</p>
+                                  <p style={{ marginTop: '12px', fontSize: '0.875rem' }}><strong>必要な対応策:</strong> {!isOriginal && cve.kev_info.required_action_ja ? cve.kev_info.required_action_ja : cve.kev_info.required_action}</p>
                                 </div>
                               )}
 
