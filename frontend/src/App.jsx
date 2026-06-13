@@ -639,6 +639,9 @@ export default function App() {
                 filteredCves.map((cve) => {
                   const isExpanded = !!expandedCves[cve.cve_id];
                   const isOriginal = localOriginals[cve.cve_id] !== undefined ? localOriginals[cve.cve_id] : showOriginal;
+                  const hasTranslation = !!cve.description_ja ||
+                    (cve.is_kev && cve.kev_info && (!!cve.kev_info.vulnerablity_name_ja || !!cve.kev_info.required_action_ja)) ||
+                    (cve.cwes && cve.cwes.some(c => c.name_ja));
                   return (
                     <React.Fragment key={cve.cve_id}>
                       <tr
@@ -695,7 +698,7 @@ export default function App() {
                                   <>
                                     <h4 style={{ display: 'flex', alignItems: 'center', gap: '8px', width: '100%' }}>
                                       <Icons.Bug /> 脆弱性詳細情報
-                                      {cve.description_ja && (
+                                      {hasTranslation && (
                                         <button
                                           onClick={(e) => { e.stopPropagation(); toggleLocalOriginal(cve.cve_id); }}
                                           style={{
