@@ -240,10 +240,7 @@ def classify_item(item: Dict[str, Any], category_type: str) -> List[int]:
     matched: Set[int] = set()
 
     # --- 1. カテゴリ自体の性質による自動付与 ---
-    # CVE および GitHub Security Advisory (GHSA) は既知のパッケージ脆弱性を扱うため、
-    # スライドの定義通り、無条件で「7: 依存・サプライチェーン」に分類します。
-    if category_type in ("cves", "ghsa_advisories"):
-        matched.add(7)
+    # (無条件でのカテゴリ7付与は廃止し、実際のCWEやキーワードのシグナルに依存します)
 
     # --- 2. CWE IDに基づくマッピング ---
     # cve_ids またはネストされた cwes から CWE を抽出
@@ -342,15 +339,5 @@ def classify_item(item: Dict[str, Any], category_type: str) -> List[int]:
                 matched.add(cat_id)
 
     # --- 5. フォールバック判定 ---
-    # 何にもマッチしなかった場合の対応
-    if not matched:
-        if category_type in ("cves", "ghsa_advisories"):
-            # 既知の脆弱性なのでサプライチェーン依存へ
-            matched.add(7)
-        else:
-            # 論文やブログ記事などで分類できないものは、一旦デフォルトなしにするか、
-            # あるいは「8. ロギング・ロジック / その他ロジック」などのデフォルトにするか。
-            # ここでは厳密にするため、空リスト（表示上は分類なし等）を許容します。
-            pass
-
+    # 何にもマッチしなかった場合は空のままにします。
     return sorted(list(matched))
