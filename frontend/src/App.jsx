@@ -47,6 +47,55 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('overview');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterOption, setFilterOption] = useState('all');
+  const [selectedCategory, setSelectedCategory] = useState(null); // null means show all
+
+  // 8 Categories styling metadata
+  const CATEGORIES_META = {
+    1: { name: "入力検証", color: "#3b82f6", bg: "rgba(59, 130, 246, 0.12)", border: "rgba(59, 130, 246, 0.2)" },
+    2: { name: "認証", color: "#10b981", bg: "rgba(16, 185, 129, 0.12)", border: "rgba(16, 185, 129, 0.2)" },
+    3: { name: "認可・アクセス制御", color: "#f59e0b", bg: "rgba(245, 158, 11, 0.12)", border: "rgba(245, 158, 11, 0.2)" },
+    4: { name: "セッション管理", color: "#8b5cf6", bg: "rgba(139, 92, 246, 0.12)", border: "rgba(139, 92, 246, 0.2)" },
+    5: { name: "データ保護・暗号", color: "#ec4899", bg: "rgba(236, 72, 153, 0.12)", border: "rgba(236, 72, 153, 0.2)" },
+    6: { name: "設定・構成", color: "#06b6d4", bg: "rgba(6, 182, 212, 0.12)", border: "rgba(6, 182, 212, 0.2)" },
+    7: { name: "依存・サプライチェーン", color: "#ef4444", bg: "rgba(239, 68, 68, 0.12)", border: "rgba(239, 68, 68, 0.2)" },
+    8: { name: "ロギング・ロジック", color: "#94a3b8", bg: "rgba(148, 163, 184, 0.12)", border: "rgba(148, 163, 184, 0.2)" },
+  };
+
+  const renderCategoryBadges = (itemCategories) => {
+    if (!itemCategories || itemCategories.length === 0) return null;
+    return (
+      <div style={{ display: 'inline-flex', flexWrap: 'wrap', gap: '6px', alignItems: 'center' }}>
+        {itemCategories.map(catId => {
+          const meta = CATEGORIES_META[catId];
+          if (!meta) return null;
+          return (
+            <span
+              key={catId}
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                padding: '2px 8px',
+                borderRadius: '4px',
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                color: meta.color,
+                background: meta.bg,
+                border: `1px solid ${meta.border}`,
+                cursor: 'pointer'
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setSelectedCategory(selectedCategory === catId ? null : catId);
+              }}
+              title={`${meta.name}でフィルタ`}
+            >
+              {catId}. {meta.name}
+            </span>
+          );
+        })}
+      </div>
+    );
+  };
 
   // Translation settings
   const [showOriginal, setShowOriginal] = useState(false);
@@ -150,6 +199,91 @@ export default function App() {
     const activeKeywords = data.meta.keywords ? data.meta.keywords.filter(k => k.status.toLowerCase() === 'active') : [];
     const activeProducts = data.meta.products ? data.meta.products.filter(p => p.status.toLowerCase() === 'active') : [];
 
+    // Calculate count per category across all items
+    const categoryCounts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0 };
+    data.cves.forEach(c => c.app_categories?.forEach(cat => categoryCounts[cat]++));
+    data.arxiv.forEach(p => p.app_categories?.forEach(cat => categoryCounts[cat]++));
+    data.rss_articles.forEach(a => a.app_categories?.forEach(cat => categoryCounts[cat]++));
+
+    const renderCategorySelector = () => {
+      const categories = data?.meta?.categories || [];
+      return (
+        <div style={{ marginBottom: '30px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <h3 style={{ fontSize: '1.1rem', fontWeight: 600, color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <Icons.Shield />
+              アプリセキュリティ 8カテゴリ分析 (クリックで絞り込み)
+            </h3>
+            {selectedCategory && (
+              <button
+                onClick={() => setSelectedCategory(null)}
+                style={{
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  border: '1px solid var(--border)',
+                  color: 'var(--text-secondary)',
+                  padding: '4px 12px',
+                  borderRadius: '6px',
+                  fontSize: '0.8rem',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.1)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'rgba(255, 255, 255, 0.05)'}
+              >
+                フィルターをクリア
+              </button>
+            )}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '16px' }}>
+            {Object.entries(CATEGORIES_META).map(([idStr, meta]) => {
+              const id = parseInt(idStr);
+              const isSelected = selectedCategory === id;
+              const count = categoryCounts[id] || 0;
+              const categoryDef = categories.find(c => c.id === id);
+              const attackText = categoryDef?.attacks ? categoryDef.attacks.slice(0, 3).join(', ') + (categoryDef.attacks.length > 3 ? '...' : '') : '';
+
+              return (
+                <div
+                  key={id}
+                  onClick={() => setSelectedCategory(isSelected ? null : id)}
+                  style={{
+                    background: isSelected ? meta.bg : 'rgba(18, 22, 32, 0.4)',
+                    border: `1px solid ${isSelected ? meta.color : 'var(--border)'}`,
+                    borderRadius: '12px',
+                    padding: '16px',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s',
+                    boxShadow: isSelected ? `0 0 15px ${meta.border}` : 'none',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'space-between',
+                    minHeight: '100px'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isSelected) e.currentTarget.style.borderColor = meta.color;
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isSelected) e.currentTarget.style.borderColor = 'var(--border)';
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <span style={{ fontSize: '0.75rem', fontWeight: 700, color: meta.color }}>#{id}</span>
+                    <span style={{ fontSize: '1.25rem', fontWeight: 700, color: count > 0 ? 'var(--text-primary)' : 'var(--text-muted)' }}>{count}</span>
+                  </div>
+                  <div style={{ marginTop: '8px' }}>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--text-primary)' }}>{meta.name}</div>
+                    <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }} title={categoryDef?.attacks ? categoryDef.attacks.join(', ') : ''}>
+                      {attackText || '攻撃/失敗事例'}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    };
+
     // 🌟 新着判定ヘルパー
     const isNewItem = (dateString) => {
       if (!dateString) return false;
@@ -209,6 +343,7 @@ export default function App() {
                       <span className="font-mono" style={{ fontWeight: 700, color: 'var(--accent-rose)', fontSize: '0.9rem' }}>{cve.cve_id}</span>
                       {cve.is_kev && <span className="badge badge-rose" style={{ fontSize: '0.65rem', padding: '2px 6px' }}>CISA KEV 悪用済</span>}
                       {cve.cvss_base_score && <span className="badge badge-rose" style={{ fontSize: '0.65rem', padding: '2px 6px', background: 'rgba(244, 63, 94, 0.15)', color: '#f43f5e' }}>CVSS {cve.cvss_base_score}</span>}
+                      {renderCategoryBadges(cve.app_categories)}
                       {cve.description_ja && (
                         <button
                           onClick={() => toggleLocalOriginal(cve.cve_id)}
@@ -381,10 +516,10 @@ export default function App() {
       );
     };
 
-    // Aggregate latest feed (Articles + CVEs + arXiv)
-    const recentFeed = [];
-    data.cves.slice(0, 5).forEach(cve => {
-      recentFeed.push({
+    // Aggregate latest feed (Articles + CVEs + arXiv) and filter by selectedCategory
+    const rawFeed = [];
+    data.cves.forEach(cve => {
+      rawFeed.push({
         id: cve.cve_id,
         type: 'cve',
         title: `${cve.cve_id}: ${(cve.cvss_base_score !== null && cve.cvss_base_score !== undefined) ? `CVSS ${cve.cvss_base_score}` : 'スコア未設定'} (${cve.cvss_base_label || '不明'})`,
@@ -394,12 +529,13 @@ export default function App() {
         date: cve.published_at,
         badge: cve.is_kev ? 'badge-rose' : 'badge-amber',
         badgeText: cve.is_kev ? 'KEV 脆弱性' : 'CVE',
-        url: `https://nvd.nist.gov/vuln/detail/${cve.cve_id}`
+        url: `https://nvd.nist.gov/vuln/detail/${cve.cve_id}`,
+        app_categories: cve.app_categories || []
       });
     });
 
-    data.arxiv.slice(0, 5).forEach(paper => {
-      recentFeed.push({
+    data.arxiv.forEach(paper => {
+      rawFeed.push({
         id: paper.arxiv_id,
         type: 'arxiv',
         title: paper.title,
@@ -409,12 +545,13 @@ export default function App() {
         date: paper.published_at,
         badge: 'badge-purple',
         badgeText: '研究論文',
-        url: paper.abs_url
+        url: paper.abs_url,
+        app_categories: paper.app_categories || []
       });
     });
 
-    data.rss_articles.slice(0, 5).forEach(art => {
-      recentFeed.push({
+    data.rss_articles.forEach(art => {
+      rawFeed.push({
         id: art.article_id,
         type: 'article',
         title: art.title,
@@ -424,11 +561,18 @@ export default function App() {
         date: art.published_at,
         badge: 'badge-blue',
         badgeText: art.source_name || '記事',
-        url: art.url
+        url: art.url,
+        app_categories: art.app_categories || []
       });
     });
 
-    recentFeed.sort((a, b) => new Date(b.date) - new Date(a.date));
+    // Filter feed by selectedCategory
+    const filteredFeed = rawFeed.filter(item => {
+      if (!selectedCategory) return true;
+      return item.app_categories && item.app_categories.includes(selectedCategory);
+    });
+
+    filteredFeed.sort((a, b) => new Date(b.date) - new Date(a.date));
 
     return (
       <div className="fade-in">
@@ -446,6 +590,7 @@ export default function App() {
         `}</style>
 
         {renderAlerts()}
+        {renderCategorySelector()}
 
         <div className="stat-grid">
           <div className="glass-panel stat-card">
@@ -471,17 +616,18 @@ export default function App() {
           <div className="glass-panel" style={{ padding: '30px' }}>
             <h3 style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Icons.Overview />
-              最新の脅威フィード（グローバル監視）
+              最新の脅威フィード{selectedCategory ? `（カテゴリ #${selectedCategory} で絞り込み中）` : '（グローバル監視）'}
             </h3>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {recentFeed.slice(0, 10).map((item, idx) => {
+              {filteredFeed.slice(0, 10).map((item, idx) => {
                 const isOriginal = localOriginals[item.id] !== undefined ? localOriginals[item.id] : showOriginal;
                 return (
                   <div key={idx} style={{ paddingBottom: '20px', borderBottom: '1px solid var(--border)', display: 'flex', flexDirection: 'column', gap: '8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '10px' }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
                         <span className={`badge ${item.badge}`}>{item.badgeText}</span>
                         {renderNewBadge(item.date)}
+                        {renderCategoryBadges(item.app_categories)}
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                         {(item.title_ja || item.desc_ja) && (
@@ -516,6 +662,11 @@ export default function App() {
                   </div>
                 );
               })}
+              {filteredFeed.length === 0 && (
+                <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)' }}>
+                  選択したカテゴリに該当するフィードアイテムが見つかりませんでした。
+                </div>
+              )}
             </div>
           </div>
 
@@ -580,11 +731,28 @@ export default function App() {
 
       const matchesKev = !cveKevOnly || cve.is_kev;
 
-      return matchesSearch && matchesSeverity && matchesKev;
+      const matchesCategory = !selectedCategory || (cve.app_categories && cve.app_categories.includes(selectedCategory));
+
+      return matchesSearch && matchesSeverity && matchesKev && matchesCategory;
     });
 
     return (
       <div className="fade-in">
+        {selectedCategory && (
+          <div style={{ background: CATEGORIES_META[selectedCategory]?.bg, border: `1px solid ${CATEGORIES_META[selectedCategory]?.border}`, padding: '12px 20px', borderRadius: '10px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ width: '8px', height: '8px', background: CATEGORIES_META[selectedCategory]?.color, borderRadius: '50%' }}></span>
+              現在、カテゴリ <strong>#{selectedCategory} {CATEGORIES_META[selectedCategory]?.name}</strong> に該当する脆弱性のみを表示しています ({filteredCves.length}件)。
+            </span>
+            <button
+              onClick={() => setSelectedCategory(null)}
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'var(--text-secondary)', padding: '4px 12px', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
+            >
+              フィルター解除
+            </button>
+          </div>
+        )}
+
         <div className="search-container">
           <input
             type="text"
@@ -624,7 +792,7 @@ export default function App() {
                 <th style={{ width: '130px' }}>公開日</th>
                 <th style={{ width: '120px' }}>CVSS スコア</th>
                 <th style={{ width: '160px' }}>EPSS スコア</th>
-                <th>説明</th>
+                <th>カテゴリ ＆ 説明</th>
                 <th style={{ width: '120px' }}>ステータス</th>
               </tr>
             </thead>
@@ -677,8 +845,13 @@ export default function App() {
                           {renderEpssBar(cve.epss)}
                         </td>
                         <td style={{ fontSize: '0.9rem', lineHeight: '1.4', paddingRight: '20px' }}>
-                          <div style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                            {!(localOriginals[cve.cve_id] !== undefined ? localOriginals[cve.cve_id] : showOriginal) && cve.description_ja ? cve.description_ja : cve.description}
+                          <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                              {renderCategoryBadges(cve.app_categories)}
+                            </div>
+                            <div style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                              {!(localOriginals[cve.cve_id] !== undefined ? localOriginals[cve.cve_id] : showOriginal) && cve.description_ja ? cve.description_ja : cve.description}
+                            </div>
                           </div>
                         </td>
                         <td>
@@ -728,6 +901,12 @@ export default function App() {
                               })()}
 
                               <div className="cve-meta-info">
+                                <div>
+                                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>対応セキュリティカテゴリ</span>
+                                  <div style={{ marginTop: '6px' }}>
+                                    {renderCategoryBadges(cve.app_categories) || <span style={{ color: 'var(--text-muted)', fontSize: '0.85rem' }}>未分類</span>}
+                                  </div>
+                                </div>
                                 <div>
                                   <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>最終更新日</span>
                                   <p style={{ fontSize: '0.9rem', marginTop: '4px' }}>{formatDateTime(cve.last_modified_at)}</p>
@@ -814,16 +993,35 @@ export default function App() {
 
   // 3. arXiv Tab Render
   const renderArxiv = () => {
-    const filteredPapers = data.arxiv.filter(paper =>
-      paper.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (paper.title_ja && paper.title_ja.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      paper.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (paper.summary_ja && paper.summary_ja.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      paper.authors.some(author => author.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    const filteredPapers = data.arxiv.filter(paper => {
+      const matchesSearch = paper.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (paper.title_ja && paper.title_ja.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        paper.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (paper.summary_ja && paper.summary_ja.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        paper.authors.some(author => author.toLowerCase().includes(searchQuery.toLowerCase()));
+
+      const matchesCategory = !selectedCategory || (paper.app_categories && paper.app_categories.includes(selectedCategory));
+
+      return matchesSearch && matchesCategory;
+    });
 
     return (
       <div className="fade-in">
+        {selectedCategory && (
+          <div style={{ background: CATEGORIES_META[selectedCategory]?.bg, border: `1px solid ${CATEGORIES_META[selectedCategory]?.border}`, padding: '12px 20px', borderRadius: '10px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ width: '8px', height: '8px', background: CATEGORIES_META[selectedCategory]?.color, borderRadius: '50%' }}></span>
+              現在、カテゴリ <strong>#{selectedCategory} {CATEGORIES_META[selectedCategory]?.name}</strong> に該当する学術論文のみを表示しています ({filteredPapers.length}件)。
+            </span>
+            <button
+              onClick={() => setSelectedCategory(null)}
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'var(--text-secondary)', padding: '4px 12px', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
+            >
+              フィルター解除
+            </button>
+          </div>
+        )}
+
         <div className="search-container">
           <input
             type="text"
@@ -836,7 +1034,7 @@ export default function App() {
 
         <div className="card-grid">
           {filteredPapers.length === 0 ? (
-            <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', width: '100%', gridColumn: '1 / -1' }}>
               条件に一致する論文が見つかりませんでした。
             </div>
           ) : (
@@ -881,7 +1079,8 @@ export default function App() {
                     {!isOriginal && paper.summary_ja ? paper.summary_ja : paper.summary}
                   </p>
 
-                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px', alignItems: 'center' }}>
+                    {renderCategoryBadges(paper.app_categories)}
                     {paper.categories.map((cat, i) => (
                       <span key={i} className="badge badge-cyan" style={{ fontSize: '0.7rem' }}>{cat}</span>
                     ))}
@@ -915,15 +1114,34 @@ export default function App() {
 
   // 4. Blogs & News Tab Render
   const renderBlogsAndNews = () => {
-    const filteredArticles = data.rss_articles.filter(art =>
-      art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (art.title_ja && art.title_ja.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (art.summary && art.summary.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (art.summary_ja && art.summary_ja.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    const filteredArticles = data.rss_articles.filter(art => {
+      const matchesSearch = art.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (art.title_ja && art.title_ja.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (art.summary && art.summary.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (art.summary_ja && art.summary_ja.toLowerCase().includes(searchQuery.toLowerCase()));
+
+      const matchesCategory = !selectedCategory || (art.app_categories && art.app_categories.includes(selectedCategory));
+
+      return matchesSearch && matchesCategory;
+    });
 
     return (
       <div className="fade-in">
+        {selectedCategory && (
+          <div style={{ background: CATEGORIES_META[selectedCategory]?.bg, border: `1px solid ${CATEGORIES_META[selectedCategory]?.border}`, padding: '12px 20px', borderRadius: '10px', marginBottom: '20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span style={{ fontSize: '0.9rem', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ width: '8px', height: '8px', background: CATEGORIES_META[selectedCategory]?.color, borderRadius: '50%' }}></span>
+              現在、カテゴリ <strong>#{selectedCategory} {CATEGORIES_META[selectedCategory]?.name}</strong> に該当するニュース・ブログのみを表示しています ({filteredArticles.length}件)。
+            </span>
+            <button
+              onClick={() => setSelectedCategory(null)}
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid var(--border)', color: 'var(--text-secondary)', padding: '4px 12px', borderRadius: '6px', fontSize: '0.8rem', cursor: 'pointer' }}
+            >
+              フィルター解除
+            </button>
+          </div>
+        )}
+
         <div className="search-container">
           <input
             type="text"
@@ -936,7 +1154,7 @@ export default function App() {
 
         <div className="card-grid">
           {filteredArticles.length === 0 ? (
-            <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)' }}>
+            <div className="glass-panel" style={{ padding: '40px', textAlign: 'center', color: 'var(--text-muted)', width: '100%', gridColumn: '1 / -1' }}>
               条件に一致する記事が見つかりませんでした。
             </div>
           ) : (
@@ -984,26 +1202,27 @@ export default function App() {
                     </p>
                   )}
 
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px' }}>
-                  {art.owasp_mapping && art.owasp_mapping.map((map, i) => (
-                    <span key={i} className="badge badge-amber" style={{ fontSize: '0.7rem' }}>{map}</span>
-                  ))}
-                  {art.mitre_mapping && art.mitre_mapping.map((map, i) => (
-                    <span key={i} className="badge badge-rose" style={{ fontSize: '0.7rem' }}>{map}</span>
-                  ))}
-                  {art.nist_mapping && art.nist_mapping.map((map, i) => (
-                    <span key={i} className="badge badge-cyan" style={{ fontSize: '0.7rem' }}>{map}</span>
-                  ))}
-                </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', marginTop: '4px', alignItems: 'center' }}>
+                    {renderCategoryBadges(art.app_categories)}
+                    {art.owasp_mapping && art.owasp_mapping.map((map, i) => (
+                      <span key={i} className="badge badge-amber" style={{ fontSize: '0.7rem' }}>{map}</span>
+                    ))}
+                    {art.mitre_mapping && art.mitre_mapping.map((map, i) => (
+                      <span key={i} className="badge badge-rose" style={{ fontSize: '0.7rem' }}>{map}</span>
+                    ))}
+                    {art.nist_mapping && art.nist_mapping.map((map, i) => (
+                      <span key={i} className="badge badge-cyan" style={{ fontSize: '0.7rem' }}>{map}</span>
+                    ))}
+                  </div>
 
-                <div className="card-footer" style={{ borderTop: 'none', paddingDirect: 0, paddingBottom: 0 }}>
-                  <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>取得日時: {formatDateTime(art.fetched_at)}</span>
-                  {art.importance_score && <span>重要度: <strong style={{ color: 'var(--accent-cyan)' }}>{art.importance_score.toFixed(2)}</strong></span>}
+                  <div className="card-footer" style={{ borderTop: 'none', paddingDirect: 0, paddingBottom: 0 }}>
+                    <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>取得日時: {formatDateTime(art.fetched_at)}</span>
+                    {art.importance_score && <span>重要度: <strong style={{ color: 'var(--accent-cyan)' }}>{art.importance_score.toFixed(2)}</strong></span>}
+                  </div>
                 </div>
-              </div>
-            );
-          })
-        )}
+              );
+            })
+          )}
         </div>
       </div>
     );
