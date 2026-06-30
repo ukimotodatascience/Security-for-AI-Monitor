@@ -261,7 +261,7 @@ def classify_item(item: Dict[str, Any], category_type: str) -> List[int]:
         else:
             # 前方一致での部分判定 (例: CWE-79.xxx)
             for k, v in CWE_MAP.items():
-                if cwe_str.startswith(k):
+                if cwe_str.startswith(k + "."):
                     matched.add(v)
 
     # --- 3. OWASP Top 10 マッピングに基づく判定 ---

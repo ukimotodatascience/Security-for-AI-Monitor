@@ -204,6 +204,8 @@ export default function App() {
     data.cves.forEach(c => c.app_categories?.forEach(cat => categoryCounts[cat]++));
     data.arxiv.forEach(p => p.app_categories?.forEach(cat => categoryCounts[cat]++));
     data.rss_articles.forEach(a => a.app_categories?.forEach(cat => categoryCounts[cat]++));
+    data.rss_news?.forEach(n => n.app_categories?.forEach(cat => categoryCounts[cat]++));
+    data.ghsa_advisories?.forEach(g => g.app_categories?.forEach(cat => categoryCounts[cat]++));
 
     const renderCategorySelector = () => {
       const categories = data?.meta?.categories || [];
