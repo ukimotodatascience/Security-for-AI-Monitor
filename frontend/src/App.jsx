@@ -369,7 +369,7 @@ export default function App() {
                       {!isOriginal && cve.description_ja ? cve.description_ja : cve.description}
                     </p>
                   </div>
-                  <button onClick={() => { setActiveTab('vulnerabilities'); setCveSearch(cve.cve_id); setExpandedCves({ [cve.cve_id]: true }); }} className="badge badge-cyan" style={{ border: 'none', cursor: 'pointer', padding: '6px 12px', fontSize: '0.75rem', flexShrink: 0 }}>
+                  <button onClick={() => { setActiveTab('vulnerabilities'); setCveSearch(cve.cve_id); setExpandedCves({ [cve.cve_id]: true }); setSelectedCategory(null); }} className="badge badge-cyan" style={{ border: 'none', cursor: 'pointer', padding: '6px 12px', fontSize: '0.75rem', flexShrink: 0 }}>
                     詳細を確認
                   </button>
                 </div>
