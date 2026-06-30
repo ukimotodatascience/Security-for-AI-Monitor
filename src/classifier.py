@@ -173,7 +173,7 @@ KEYWORDS_MAP = {
         re.IGNORECASE,
     ),
     4: re.compile(
-        r"(session|\bcsrf\b|\bxsrf\b|cross\s*site\s*request\s*forgery|cookie|hijack|fixation|session\s*token|session\s*id|session\s*fixation|session\s*hijacking)",
+        r"(\bsession\b|\bcsrf\b|\bxsrf\b|cross\s*site\s*request\s*forgery|cookie|hijack|fixation|session\s*token|session\s*id|session\s*fixation|session\s*hijacking)",
         re.IGNORECASE,
     ),
     5: re.compile(
