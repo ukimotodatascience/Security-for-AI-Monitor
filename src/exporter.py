@@ -6,6 +6,8 @@ from typing import Dict, Any
 
 from src.storage import FileStorage
 from src.translator import Translator, is_likely_english
+from src.classifier import classify_item, CATEGORIES
+
 
 logger = logging.getLogger("DataExporter")
 
@@ -129,6 +131,7 @@ def export_data(
     export_dict = {
         "meta": {
             "generated_at": datetime.now(timezone.utc).isoformat(),
+            "categories": list(CATEGORIES.values()),
             "keywords": [k.model_dump(mode="json") for k in keywords],
             "products": [p.model_dump(mode="json") for p in products],
             "totals": {
@@ -236,6 +239,9 @@ def export_data(
     for item in time_series_items:
         category = item["category"]
         item_data = item["data"]
+
+        # Apply classifications
+        item_data["app_categories"] = classify_item(item_data, category)
 
         # Pre-check size before translation to avoid unnecessary translation requests on dropped items
         item_json_pre = json.dumps(item_data, cls=DateTimeEncoder, ensure_ascii=False)
