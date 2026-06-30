@@ -185,7 +185,7 @@ KEYWORDS_MAP = {
         re.IGNORECASE,
     ),
     7: re.compile(
-        r"(dependency|supply\s*chain|\bnpm\b|\bpypi\b|maven|cargo|package|third-party|third\s*party|vulnerable\s*version|typosquatting|poisoning|polyfill|malicious\s*package|malicious\s*dependency)",
+        r"(\b(?:vulnerable|software|package|project|third-party|external)\s*dependenc(?:y|ies)\b|supply\s*chain|\bnpm\b|\bpypi\b|\bmaven\b|\bcargo\b|\b(?:malicious|vulnerable|third-party)\s*package\b|third-party|third\s*party|vulnerable\s*version|typosquatting|\b(?:dependency|package|supply\s*chain)\s*poisoning\b|polyfill|malicious\s*package|malicious\s*dependency)",
         re.IGNORECASE,
     ),
     8: re.compile(
@@ -216,7 +216,7 @@ JA_KEYWORDS_MAP = {
         re.IGNORECASE,
     ),
     7: re.compile(
-        r"(依存|サプライチェーン|パッケージ|サードパーティ|ライブラリ|汚染|タイポスクワッティング)",
+        r"(依存関係|依存ライブラリ|外部依存|サプライチェーン|外部パッケージ|サードパーティパッケージ|サードパーティ|ライブラリ|パッケージ汚染|サプライチェーン汚染|polyfill汚染|タイポスクワッティング)",
         re.IGNORECASE,
     ),
     8: re.compile(
